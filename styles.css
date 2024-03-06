@@ -1,0 +1,52 @@
+/* styles.css */
+
+body {
+  background-color: black;
+  color: white;
+}
+
+/* Estilo específico para los elementos p */
+body p {
+  color: white;
+}
+
+/* Ajustes adicionales según sea necesario */
+#logo-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 30vh; /* O ajusta la altura según sea necesario */
+}
+
+.logo-image, .banner-image {
+  display: block;
+  margin: 0 auto;
+}
+
+/* Estilo para el contenedor de eventos */
+#eventos-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Estilo para los eventos dentro del contenedor */
+#eventos-container div {
+  /* Puedes ajustar el tamaño de la fuente y otros estilos según tus preferencias */
+  font-size: 18px; /* Tamaño de fuente para los eventos */
+  line-height: 1.5; /* Altura de línea */
+  color: #000; /* Color del texto para los eventos */
+}
+
+/* Estilo específico para los enlaces dentro de los eventos */
+#eventos-container a {
+  color: #007BFF; /* Cambia el color del enlace según tus preferencias */
+  text-decoration: none; /* Quita el subrayado predeterminado de los enlaces */
+}
+
+/* Estilo para las imágenes dentro de los eventos */
+#eventos-container img {
+  max-width: 100%; /* Ajusta el ancho máximo de las imágenes según sea necesario */
+  height: auto; /* Mantiene la proporción original de la imagen */
+  margin-right: 10px; /* Espaciado a la derecha de las imágenes */
+}
