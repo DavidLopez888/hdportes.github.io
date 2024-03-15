@@ -161,7 +161,6 @@ const fetchData = async () => {
           <ul>
             ${data.f20_Detalles_Evento.L.map(detalle => `
               <li>
-                ${console.log('detalle.M.f21_imagen_Idiom:', detalle.M.f21_imagen_Idiom)}
                 ${detalle.M.f21_imagen_Idiom?.S ? `<img src="${detalle.M.f21_imagen_Idiom.S}" alt="Idiom" crossorigin="anonymous">` : ''}
                 ${detalle.M.f23_text_Idiom?.S && detalle.M.f24_url_Final?.S
                   ? `<a href="${detalle.M.f24_url_Final.S}" target="_blank">${detalle.M.f23_text_Idiom.S}</a>`
