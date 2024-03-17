@@ -28,6 +28,7 @@ body p {
   border: 2px solid #ccc; /* Agrega un borde para mejorar la apariencia */
   border-radius: 8px; /* Agrega bordes redondeados */
   outline: none; /* Quita el resaltado al hacer clic */
+  margin: 0 auto;
 }
 
 
