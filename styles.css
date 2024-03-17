@@ -22,13 +22,14 @@ body p {
 }
 
 #search-input {
-  padding: 10px; /* Ajusta el relleno según sea necesario */
-  font-size: 16px; /* Ajusta el tamaño de fuente según sea necesario */
-  width: 300px; /* Ajusta el ancho según sea necesario */
-  border: 1px solid #ccc; /* Agrega un borde para mejorar la apariencia */
-  border-radius: 5px; /* Agrega bordes redondeados */
+  padding: 15px; /* Ajusta el relleno según sea necesario */
+  font-size: 18px; /* Ajusta el tamaño de fuente según sea necesario */
+  width: 500px; /* Ajusta el ancho según sea necesario */
+  border: 2px solid #ccc; /* Agrega un borde para mejorar la apariencia */
+  border-radius: 8px; /* Agrega bordes redondeados */
   outline: none; /* Quita el resaltado al hacer clic */
 }
+
 
 #eventos-container {
   max-width: 800px;
