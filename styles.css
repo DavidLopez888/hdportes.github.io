@@ -1,5 +1,3 @@
-/* styles.css */
-
 body {
   background-color: black;
   color: white;
@@ -18,36 +16,83 @@ body p {
   height: 20vh; /* O ajusta la altura según sea necesario */
 }
 
-.logo-image, .banner-image {
-  display: block;
-  margin: 0 auto;
+#search-container {
+  text-align: center; /* Centra el contenido horizontalmente */
+  margin-top: 20px; /* Ajusta el margen superior según sea necesario */
 }
 
-/* Estilo para el contenedor de eventos */
+#search-input {
+  padding: 10px; /* Ajusta el relleno según sea necesario */
+  font-size: 16px; /* Ajusta el tamaño de fuente según sea necesario */
+  width: 300px; /* Ajusta el ancho según sea necesario */
+  border: 1px solid #ccc; /* Agrega un borde para mejorar la apariencia */
+  border-radius: 5px; /* Agrega bordes redondeados */
+  outline: none; /* Quita el resaltado al hacer clic */
+}
+
 #eventos-container {
   max-width: 800px;
   margin: 0 auto;
   padding: 20px;
 }
 
-/* Estilo para los eventos dentro del contenedor */
-#eventos-container div {
-  /* Puedes ajustar el tamaño de la fuente y otros estilos según tus preferencias */
-  font-size: 18px; /* Tamaño de fuente para los eventos */
-  line-height: 1.5; /* Altura de línea */
-  color: #000; /* Color del texto para los eventos */
+.logo-image, .banner-image {
+  display: block;
+  margin: 0 auto;
+}
+/* Estilo para el contenedor principal de eventos */
+#eventos-container {
+  max-width: 1000px;
+  margin: 0 auto; /* Esto centrará el contenedor en la página */
+  padding: 50px;
 }
 
-/* Estilo específico para los enlaces dentro de los eventos */
-#eventos-container a {
-  color: #007BFF; /* Cambia el color del enlace según tus preferencias */
+.evento-header {
+  display: flex;
+  align-items: center; /* Centra verticalmente los elementos */
+}
+/* Estilo para los eventos dentro del contenedor */
+.evento {
+  display: grid; /* Utiliza un enfoque de cuadrícula para el diseño */
+  grid-template-columns: 1fr; /* Una sola columna */
+  grid-gap: 10px; /* Espacio entre las filas y columnas */
+  font-size: 22px; /* Tamaño de fuente para los eventos */
+  font-family: cursive; /* Familia de fuente para los eventos */  
+}
+
+/* Estilo para la imagen de la bandera dentro del evento */
+.bandera {
+  width: 30px; /* Ancho de la bandera */
+  height: 20px; /* Alto de la bandera */
+  margin-right: 10px; /* Espaciado a la derecha de la bandera */
+}
+
+/* Estilo para el texto dentro de los eventos */
+.evento p {
+  margin: 0; /* Eliminar el margen predeterminado del párrafo */
+}
+
+.evento .detalle-evento {
+  grid-column: 1 / -1; /* Ocupa todas las columnas disponibles */
+  list-style: none; /* Esto eliminará los marcadores de lista */
+}
+
+/* Estilo para cada elemento de la lista de detalles */
+.detalle-evento li {
+  margin-bottom: 10px; /* Espaciado inferior para separar cada detalle del evento */
+}
+
+/* Estilo para las imágenes dentro de los detalles del evento */
+.detalle-evento img {
+  max-width: 100%; /* Ajustar el ancho máximo de las imágenes según sea necesario */
+  height: auto; /* Mantener la proporción original de la imagen */
+}
+
+/* Estilo para los enlaces dentro de los detalles del evento */
+.detalle-evento a {
+  color: #007BFF; /* Color del texto para los enlaces */
   text-decoration: none; /* Quita el subrayado predeterminado de los enlaces */
 }
 
-/* Estilo para las imágenes dentro de los eventos */
-#eventos-container img {
-  max-width: 100%; /* Ajusta el ancho máximo de las imágenes según sea necesario */
-  height: auto; /* Mantiene la proporción original de la imagen */
-  margin-right: 10px; /* Espaciado a la derecha de las imágenes */
-}
+
 
