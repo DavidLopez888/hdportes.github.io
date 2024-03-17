@@ -149,9 +149,7 @@ const fetchData = async () => {
           eventoDiv.innerHTML += `
             <p>${horaAjustada} - ${data.f05_event_categoria && typeof data.f05_event_categoria === 'object' && data.f05_event_categoria.hasOwnProperty('S') ? data.f05_event_categoria.S : ''} - ${data.f06_name_event && typeof data.f06_name_event === 'object' && data.f06_name_event.hasOwnProperty('S') ? data.f06_name_event.S : ''} </p>
           `;
-        }
-        
-        
+        }        
         
         //console.log("data.f20_Detalles_Evento." , data.f20_Detalles_Evento);
 
