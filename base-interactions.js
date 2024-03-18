@@ -113,8 +113,8 @@ const fetchData = async () => {
       
       // Calcular la diferencia de horas entre la hora de ejecución del usuario y la hora ajustada del evento
       const diferenciaHoras = calcularDiferenciaHoras(horaEjecucionUsuario, horaAjustada);
-
-      if ((diferenciaHoras >= -180 && diferenciaHoras <= 180) || (typeof data.f02_proveedor === 'string' && data.f02_proveedor.includes("LiveTv"))) {
+      const proveedor = typeof data.f02_proveedor === 'object' ? data.f02_proveedor.S : data.f02_proveedor;
+      if ((diferenciaHoras >= -180 && diferenciaHoras <= 180) || (typeof proveedor === 'string' && proveedor.includes("LiveTv"))) {
         // Crear un elemento div para cada evento
         const eventoDiv = document.createElement('div');
         eventoDiv.classList.add('evento');
@@ -133,7 +133,7 @@ const fetchData = async () => {
         }
     
         const textoEvento = document.createElement('p');
-        textoEvento.textContent = `${horaAjustada} - ${data.f05_event_categoria && typeof data.f05_event_categoria === 'object' && data.f05_event_categoria.hasOwnProperty('S') ? data.f05_event_categoria.S : ''} - ${data.f06_name_event && typeof data.f06_name_event === 'object' && data.f06_name_event.hasOwnProperty('S') ? data.f06_name_event.S : ''}`;
+        textoEvento.textContent = `${horaAjustada} | ${data.f05_event_categoria && typeof data.f05_event_categoria === 'object' && data.f05_event_categoria.hasOwnProperty('S') ? data.f05_event_categoria.S : ''} | ${data.f06_name_event && typeof data.f06_name_event === 'object' && data.f06_name_event.hasOwnProperty('S') ? data.f06_name_event.S : ''}`;
         textoEvento.classList.add('texto-evento');
         eventoHeader.appendChild(textoEvento);
     
@@ -150,6 +150,7 @@ const fetchData = async () => {
                     const imagenIdiom = document.createElement('img');
                     imagenIdiom.src = detalle.M.f21_imagen_Idiom.S;
                     imagenIdiom.alt = 'Idiom';
+                    detalleLi.appendChild(document.createTextNode(' | '));
                     detalleLi.appendChild(imagenIdiom);
                 }
                 if (detalle.M.f23_text_Idiom?.S && detalle.M.f24_url_Final?.S) {
@@ -157,6 +158,7 @@ const fetchData = async () => {
                     enlace.href = detalle.M.f24_url_Final.S;
                     enlace.target = '_blank';
                     enlace.textContent = detalle.M.f23_text_Idiom.S;
+                    detalleLi.appendChild(document.createTextNode(' | '));
                     detalleLi.appendChild(enlace);
                 }
                 if (detalle.M.f22_opcion_Watch?.S && detalle.M.f24_url_Final?.S) {
@@ -164,7 +166,9 @@ const fetchData = async () => {
                     enlaceWatch.href = detalle.M.f24_url_Final.S;
                     enlaceWatch.target = '_blank';
                     enlaceWatch.textContent = detalle.M.f22_opcion_Watch.S;
+                    detalleLi.appendChild(document.createTextNode(' | '));
                     detalleLi.appendChild(enlaceWatch);
+                    detalleLi.appendChild(document.createTextNode(' | '));
                 }
                 eventoDetalle.appendChild(detalleLi);
             });

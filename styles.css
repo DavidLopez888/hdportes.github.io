@@ -31,7 +31,6 @@ body p {
   margin: 0 auto;
 }
 
-
 #eventos-container {
   max-width: 800px;
   margin: 0 auto;
@@ -59,7 +58,7 @@ body p {
   grid-template-columns: 1fr; /* Una sola columna */
   grid-gap: 10px; /* Espacio entre las filas y columnas */
   font-size: 22px; /* Tamaño de fuente para los eventos */
-  font-family: cursive; /* Familia de fuente para los eventos */  
+  font-family: Verdana;                                               
 }
 
 /* Estilo para la imagen de la bandera dentro del evento */
@@ -86,8 +85,8 @@ body p {
 
 /* Estilo para las imágenes dentro de los detalles del evento */
 .detalle-evento img {
-  max-width: 100%; /* Ajustar el ancho máximo de las imágenes según sea necesario */
-  height: auto; /* Mantener la proporción original de la imagen */
+  max-width: 500%; /* Ajustar el ancho máximo de las imágenes según sea necesario */
+  height: auto;  /* Mantener la proporción original de la imagen */
 }
 
 /* Estilo para los enlaces dentro de los detalles del evento */
