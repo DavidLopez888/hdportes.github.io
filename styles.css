@@ -24,7 +24,7 @@ body p {
 #search-input {
   padding: 15px; /* Ajusta el relleno según sea necesario */
   font-size: 18px; /* Ajusta el tamaño de fuente según sea necesario */
-  width: 500px; /* Ajusta el ancho según sea necesario */
+  width: 444px; /* Ajusta el ancho según sea necesario */
   border: 2px solid #ccc; /* Agrega un borde para mejorar la apariencia */
   border-radius: 8px; /* Agrega bordes redondeados */
   outline: none; /* Quita el resaltado al hacer clic */
@@ -32,7 +32,7 @@ body p {
 }
 
 #eventos-container {
-  max-width: 800px;
+  max-width: 888px;
   margin: 0 auto;
   padding: 20px;
 }
@@ -57,7 +57,7 @@ body p {
   display: grid; /* Utiliza un enfoque de cuadrícula para el diseño */
   grid-template-columns: 1fr; /* Una sola columna */
   grid-gap: 10px; /* Espacio entre las filas y columnas */
-  font-size: 22px; /* Tamaño de fuente para los eventos */
+  font-size: 20px; /* Tamaño de fuente para los eventos */
   font-family: Verdana;                                               
 }
 
