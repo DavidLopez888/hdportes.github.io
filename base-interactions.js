@@ -180,13 +180,7 @@ const fetchData = async () => {
     
         // Agregar el elemento del evento al contenedor principal
         eventosContainer.appendChild(eventoDiv);
-      }
-    
-    
-    
-    
-    
-    
+      }    
     });
 
     console.log("Conexión exitosa. Datos recuperados correctamente 3.");
