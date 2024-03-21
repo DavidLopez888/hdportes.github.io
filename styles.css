@@ -58,13 +58,13 @@ body p {
   grid-template-columns: 1fr; /* Una sola columna */
   grid-gap: 10px; /* Espacio entre las filas y columnas */
   font-size: 20px; /* Tamaño de fuente para los eventos */
-  font-family: Verdana;                                               
+  font-family: sans-serif;                                               
 }
 
 /* Estilo para la imagen de la bandera dentro del evento */
 .bandera {
-  width: 30px; /* Ancho de la bandera */
-  height: 20px; /* Alto de la bandera */
+  width: 35px; /* Ancho de la bandera */
+  height: 35px; /* Alto de la bandera */
   margin-right: 10px; /* Espaciado a la derecha de la bandera */
 }
 
