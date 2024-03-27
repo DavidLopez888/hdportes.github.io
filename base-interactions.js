@@ -8,7 +8,7 @@ AWS.config.update({
 // Crea una instancia de DynamoDB
 var dynamodb = new AWS.DynamoDB();
 
-// Función para obtener la diferencia horaria entre el UTC-6 y la ubicación del usuario
+// Funcion para obtener la diferencia horaria entre el UTC-6 y la ubicacion del usuario
 async function obtenerDiferenciaHorariaUsuario() {
   try {
     const ubicacionUsuario = await obtenerUbicacionUsuario();
@@ -17,7 +17,7 @@ async function obtenerDiferenciaHorariaUsuario() {
       const diferenciaHoraria = obtenerDiferenciaHoraria("Etc/GMT+6", zonaHorariaUsuario);      
       return diferenciaHoraria;
     } else {
-      console.warn("La geolocalización no está disponible o no se ha proporcionado permiso.");
+      console.warn("La geolocalizacion no esta disponible o no se ha proporcionado permiso.");
       return 0;
     }
   } catch (error) {
@@ -26,31 +26,31 @@ async function obtenerDiferenciaHorariaUsuario() {
   }
 }
 
-// Función para obtener la ubicación actual del usuario usando la API de geolocalización
+// Funcion para obtener la ubicacion actual del usuario usando la API de geolocalizacion
 function obtenerUbicacionUsuario() {
   return new Promise(async (resolve, reject) => {
     try {
       const permiso = await navigator.permissions.query({ name: 'geolocation' });
 
       if (permiso.state === 'granted') {
-        // El permiso ya está otorgado, obtener la ubicación
+        // El permiso ya esta otorgado, obtener la ubicacion
         navigator.geolocation.getCurrentPosition(resolve, reject);
       } else if (permiso.state === 'prompt') {
-        // El permiso aún no se ha otorgado, solicitarlo y luego obtener la ubicación
+        // El permiso aun no se ha otorgado, solicitarlo y luego obtener la ubicacion
         navigator.geolocation.getCurrentPosition(resolve, reject);
       } else {
-        // El permiso fue denegado o está bloqueado, mostrar un mensaje
-        console.warn("La geolocalización no está disponible o no se ha proporcionado permiso.");
-        reject("Permiso de geolocalización denegado");
+        // El permiso fue denegado o esta bloqueado, mostrar un mensaje
+        console.warn("La geolocalizacion no esta disponible o no se ha proporcionado permiso.");
+        reject("Permiso de geolocalizacion denegado");
       }
     } catch (error) {
-      console.error("Error al verificar el permiso de geolocalización:", error);
+      console.error("Error al verificar el permiso de geolocalizacion:", error);
       reject(error);
     }
   });
 }
 
-// Función para calcular la diferencia horaria entre dos zonas horarias
+// Funcion para calcular la diferencia horaria entre dos zonas horarias
 function obtenerDiferenciaHoraria(zonaHoraria1, zonaHoraria2) {
   const fechaActual = new Date();
   const offset1 = fechaActual.getTimezoneOffsetForZone(zonaHoraria1);
@@ -58,14 +58,14 @@ function obtenerDiferenciaHoraria(zonaHoraria1, zonaHoraria2) {
   return (offset2 - offset1) / 60; // Devuelve la diferencia en horas
 }
 
-// Agrega este método al prototipo de Date para obtener el offset en minutos
+// Agrega este metodo al prototipo de Date para obtener el offset en minutos
 Date.prototype.getTimezoneOffsetForZone = function (timeZone) {
   const utcDate = new Date(this.toLocaleString("en-US", { timeZone: "UTC" }));
   const localDate = new Date(this.toLocaleString("en-US", { timeZone }));
   return (localDate - utcDate) / (60 * 1000); // Devuelve el offset en minutos
 };
 
-// Función para ajustar la hora del evento según la diferencia horaria
+// Funcion para ajustar la hora del evento segun la diferencia horaria
 function ajustarHoraEvento(horaEvento, diferenciaHoraria) {
   // Parsear la hora del evento a un objeto Date
   // Acceder al valor de la propiedad 'S' dentro del objeto horaEvento
@@ -111,10 +111,10 @@ const fetchData = async () => {
       const data = doc;
       const horaAjustada = ajustarHoraEvento(data.f04_hora_event, diferenciaHorariaUsuario);
       
-      // Calcular la diferencia de horas entre la hora de ejecución del usuario y la hora ajustada del evento
+      // Calcular la diferencia de horas entre la hora de ejecucion del usuario y la hora ajustada del evento
       const diferenciaHoras = calcularDiferenciaHoras(horaEjecucionUsuario, horaAjustada);
       const proveedor = typeof data.f02_proveedor === 'object' ? data.f02_proveedor.S : data.f02_proveedor;
-      if ((diferenciaHoras >= -180 && diferenciaHoras <= 180) || (typeof proveedor === 'string' && proveedor.includes("LiveTv"))) {
+      if ((diferenciaHoras >= -120 && diferenciaHoras <= 30) || (typeof proveedor === 'string' && proveedor.includes("LiveTv"))) {
         // Crear un elemento div para cada evento
         const eventoDiv = document.createElement('div');
         eventoDiv.classList.add('evento');
@@ -183,16 +183,16 @@ const fetchData = async () => {
       }    
     });
 
-    console.log("Conexión exitosa. Datos recuperados correctamente 3.");
+    console.log("Conexion exitosa. Datos recuperados correctamente 3.");
   } catch (error) {
     console.error("Error al conectar con la base de datos:", error);
   }
 };
 
-// Llamada a la función fetchData para verificar la conexión y recuperar datos
+// Llamada a la funcion fetchData para verificar la conexion y recuperar datos
 document.addEventListener('DOMContentLoaded', fetchData);
 
-// Event listener para la búsqueda y filtrado de eventos
+// Event listener para la busqueda y filtrado de eventos
 const searchInput = document.getElementById('search-input');
 searchInput.addEventListener('input', function() {
     const searchTerm = this.value.toLowerCase();
