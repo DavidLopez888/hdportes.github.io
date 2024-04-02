@@ -14,7 +14,7 @@ async function obtenerDiferenciaHorariaUsuario() {
     const ubicacionUsuario = await obtenerUbicacionUsuario();
     if (ubicacionUsuario) {
       const zonaHorariaUsuario = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const diferenciaHoraria = obtenerDiferenciaHoraria("Etc/GMT+6", zonaHorariaUsuario);      
+      const diferenciaHoraria = obtenerDiferenciaHoraria("Etc/GMT+5", zonaHorariaUsuario);      
       return diferenciaHoraria;
     } else {
       console.warn("La geolocalizacion no esta disponible o no se ha proporcionado permiso.");
