@@ -114,7 +114,7 @@ const fetchData = async () => {
       // Calcular la diferencia de horas entre la hora de ejecucion del usuario y la hora ajustada del evento
       const diferenciaHoras = calcularDiferenciaHoras(horaEjecucionUsuario, horaAjustada);
       const proveedor = typeof data.f02_proveedor === 'object' ? data.f02_proveedor.S : data.f02_proveedor;
-      if ((diferenciaHoras >= -120 && diferenciaHoras <= 30) || (typeof proveedor === 'string' && proveedor.includes("LiveTv"))) {
+      if ((diferenciaHoras >= -120 && diferenciaHoras <= 30) || (typeof proveedor === 'string' && proveedor.includes("LiveTV"))) {
         // Crear un elemento div para cada evento
         const eventoDiv = document.createElement('div');
         eventoDiv.classList.add('evento');
@@ -124,23 +124,85 @@ const fetchData = async () => {
         eventoHeader.classList.add('evento-header');
         eventoDiv.appendChild(eventoHeader);
     
+        // Crear un contenedor para banderaImg, horaEvento y categoryEvento
+        const infoEventoContainer = document.createElement('div');
+        infoEventoContainer.classList.add('info-evento-container');
+
         if (data.f07_URL_Flag !== null && typeof data.f07_URL_Flag === 'object' && data.f07_URL_Flag.hasOwnProperty('S')) {
             const banderaImg = document.createElement('img');
             banderaImg.src = data.f07_URL_Flag.S;
             banderaImg.alt = 'Bandera';
             banderaImg.classList.add('bandera');
-            eventoHeader.appendChild(banderaImg);
+            infoEventoContainer.appendChild(banderaImg);
         }
-    
+
+        const horaEvento = document.createElement('p');
+        horaEvento.textContent = `${horaAjustada} `; 
+        horaEvento.classList.add('hora-evento');
+        infoEventoContainer.appendChild(horaEvento);
+
+        const categoryEvento = document.createElement('p');
+        categoryEvento.textContent = `| ${data.f05_event_categoria && typeof data.f05_event_categoria === 'object' && data.f05_event_categoria.hasOwnProperty('S') ? data.f05_event_categoria.S : ''} `;
+        categoryEvento.classList.add('category-evento');
+        categoryEvento.style.marginLeft = '5px';
+        infoEventoContainer.appendChild(categoryEvento);
+
+        // Agregar el contenedor de infoEventoContainer al eventoHeader
+        eventoHeader.appendChild(infoEventoContainer);
+
+        // Crear un contenedor para textoEvento y las imagenes
+        const textoImagenesContainer = document.createElement('div');
+        textoImagenesContainer.classList.add('texto-imagenes-container');
+        textoImagenesContainer.style.display = 'flex';
+        textoImagenesContainer.style.alignItems = 'center';
+
+        // Cargar la imagen de f09_logo_Local antes de f06_name_event
+        if (data.f09_logo_Local !== null && typeof data.f09_logo_Local === 'object' && data.f09_logo_Local.hasOwnProperty('S')) {
+          const logoLocalImg = document.createElement('img');
+          logoLocalImg.src = data.f09_logo_Local.S;
+          logoLocalImg.alt = 'Logo Local';
+          logoLocalImg.classList.add('logo-local');
+          logoLocalImg.style.width = '40px'; // Ajusta el ancho segun sea necesario
+          logoLocalImg.style.height = 'auto'; // Manten la proporcion original          
+          logoLocalImg.style.marginRight = '10px'; // Ajusta el margen derecho segun sea necesario
+          textoImagenesContainer.appendChild(logoLocalImg);
+        }
+
         const textoEvento = document.createElement('p');
-        textoEvento.textContent = `${horaAjustada} | ${data.f05_event_categoria && typeof data.f05_event_categoria === 'object' && data.f05_event_categoria.hasOwnProperty('S') ? data.f05_event_categoria.S : ''} | ${data.f06_name_event && typeof data.f06_name_event === 'object' && data.f06_name_event.hasOwnProperty('S') ? data.f06_name_event.S : ''}`;
+        textoEvento.textContent = `${data.f06_name_event && typeof data.f06_name_event === 'object' && data.f06_name_event.hasOwnProperty('S') ? data.f06_name_event.S : ''}`;
         textoEvento.classList.add('texto-evento');
-        eventoHeader.appendChild(textoEvento);
-    
+        textoImagenesContainer.appendChild(textoEvento);
+
+        // Cargar la imagen de f11_logo_Visita despues de f06_name_event
+        if (data.f11_logo_Visita !== null && typeof data.f11_logo_Visita === 'object' && data.f11_logo_Visita.hasOwnProperty('S')) {
+          const logoVisitaImg = document.createElement('img');
+          logoVisitaImg.src = data.f11_logo_Visita.S;
+          logoVisitaImg.alt = 'Logo Visita';
+          logoVisitaImg.classList.add('logo-visita');
+          logoVisitaImg.style.width = '40px'; // Ajusta el ancho segun sea necesario
+          logoVisitaImg.style.height = 'auto'; // Manten la proporcion original          
+          logoVisitaImg.style.marginLeft = '10px'; // Ajusta el margen izquierdo segun sea necesario
+          textoImagenesContainer.appendChild(logoVisitaImg);
+        }
+
+        // Agregar el contenedor de textoEventoContainer al eventoHeader
+        eventoHeader.appendChild(textoImagenesContainer);
+
+
+        // Esta parte hace clickeable el header para mostrar/ocultar detalles
+        eventoHeader.addEventListener('click', () => {
+          // Esto busca el contenedor de detalles dentro del eventoDiv y alterna su visibilidad
+          const detalle = eventoDiv.querySelector('.detalle-evento-container');
+          if (detalle) {
+              detalle.style.display = detalle.style.display === 'none' ? 'block' : 'none';
+          }
+        });         
+        
         // Verifica si data.f20_Detalles_Evento es un objeto
         if (typeof data.f20_Detalles_Evento === 'object' && data.f20_Detalles_Evento !== null) {
             const detalleEventoContainer = document.createElement('div'); // Crear un contenedor para los detalles del evento
             detalleEventoContainer.classList.add('detalle-evento-container');
+            detalleEventoContainer.style.display = 'none'; // Ocultar por defecto
     
             const eventoDetalle = document.createElement('ul');
             eventoDetalle.classList.add('detalle-evento');
@@ -188,6 +250,122 @@ const fetchData = async () => {
     console.error("Error al conectar con la base de datos:", error);
   }
 };
+
+
+// const fetchData = async () => {
+//   try {
+//     // const horaEjecucionUsuario = obtenerHoraEjecucionUsuario(); // Obtener hora de ejecucion del usuario
+//     const diferenciaHorariaUsuario = await obtenerDiferenciaHorariaUsuario(); // Obtener diferencia horaria del usuario
+
+//     // Calcular la hora minima y maxima dentro del rango permitido
+//     const horaMinima = calcularHoraMinima(horaEjecucionUsuario, diferenciaHorariaUsuario);
+//     const horaMaxima = calcularHoraMaxima(horaEjecucionUsuario, diferenciaHorariaUsuario);
+
+//     // Preparar la consulta a DynamoDB con el filtro en el GSI
+//     const params = {
+//       TableName: 'eventos',
+//       IndexName: 'f04_hora_event_index', // Nombre de tu GSI
+//       KeyConditionExpression: 'f04_hora_event BETWEEN :horaMinima AND :horaMaxima', // Definir el rango de horas
+//       ExpressionAttributeValues: {
+//         ':horaMinima': horaMinima,
+//         ':horaMaxima': horaMaxima
+//       }
+//     };
+
+//     // Ejecutar la consulta a DynamoDB
+//     const result = await dynamodb.query(params).promise();
+//     const eventosContainer = document.getElementById('eventos-container');
+    
+//     // Limpiar el contenido actual del contenedor
+//     eventosContainer.innerHTML = '';
+
+//     const eventosOrdenados = result.Items ? result.Items.filter(item => {
+//       return typeof item.f04_hora_event.S === 'string';}).sort((a, b) => {
+//         return a.f04_hora_event.S.localeCompare(b.f04_hora_event.S);}) : [];    
+
+//     eventosOrdenados.forEach((doc) => {      
+//       const data = doc;
+//       const horaAjustada = ajustarHoraEvento(data.f04_hora_event, diferenciaHorariaUsuario);
+      
+//       // Calcular la diferencia de horas entre la hora de ejecucion del usuario y la hora ajustada del evento
+//       const diferenciaHoras = calcularDiferenciaHoras(horaEjecucionUsuario, horaAjustada);
+//       const proveedor = typeof data.f02_proveedor === 'object' ? data.f02_proveedor.S : data.f02_proveedor;
+//       // if ((diferenciaHoras >= -120 && diferenciaHoras <= 30) || (typeof proveedor === 'string' && proveedor.includes("LiveTv"))) {
+//         // Crear un elemento div para cada evento
+//         const eventoDiv = document.createElement('div');
+//         eventoDiv.classList.add('evento');
+    
+//         // Verificar si f07_URL_Flag no es null
+//         const eventoHeader = document.createElement('div');
+//         eventoHeader.classList.add('evento-header');
+//         eventoDiv.appendChild(eventoHeader);
+    
+//         if (data.f07_URL_Flag !== null && typeof data.f07_URL_Flag === 'object' && data.f07_URL_Flag.hasOwnProperty('S')) {
+//             const banderaImg = document.createElement('img');
+//             banderaImg.src = data.f07_URL_Flag.S;
+//             banderaImg.alt = 'Bandera';
+//             banderaImg.classList.add('bandera');
+//             eventoHeader.appendChild(banderaImg);
+//         }
+    
+//         const textoEvento = document.createElement('p');
+//         textoEvento.textContent = `${horaAjustada} | ${data.f05_event_categoria && typeof data.f05_event_categoria === 'object' && data.f05_event_categoria.hasOwnProperty('S') ? data.f05_event_categoria.S : ''} | ${data.f06_name_event && typeof data.f06_name_event === 'object' && data.f06_name_event.hasOwnProperty('S') ? data.f06_name_event.S : ''}`;
+//         textoEvento.classList.add('texto-evento');
+//         eventoHeader.appendChild(textoEvento);
+    
+//         // Verifica si data.f20_Detalles_Evento es un objeto
+//         if (typeof data.f20_Detalles_Evento === 'object' && data.f20_Detalles_Evento !== null) {
+//             const detalleEventoContainer = document.createElement('div'); // Crear un contenedor para los detalles del evento
+//             detalleEventoContainer.classList.add('detalle-evento-container');
+    
+//             const eventoDetalle = document.createElement('ul');
+//             eventoDetalle.classList.add('detalle-evento');
+//             data.f20_Detalles_Evento.L.forEach(detalle => {
+//                 const detalleLi = document.createElement('li');
+//                 if (detalle.M.f21_imagen_Idiom?.S) {
+//                     const imagenIdiom = document.createElement('img');
+//                     imagenIdiom.src = detalle.M.f21_imagen_Idiom.S;
+//                     imagenIdiom.alt = 'Idiom';
+//                     detalleLi.appendChild(document.createTextNode(' | '));
+//                     detalleLi.appendChild(imagenIdiom);
+//                 }
+//                 if (detalle.M.f23_text_Idiom?.S && detalle.M.f24_url_Final?.S) {
+//                     const enlace = document.createElement('a');
+//                     enlace.href = detalle.M.f24_url_Final.S;
+//                     enlace.target = '_blank';
+//                     enlace.textContent = detalle.M.f23_text_Idiom.S;
+//                     detalleLi.appendChild(document.createTextNode(' | '));
+//                     detalleLi.appendChild(enlace);
+//                 }
+//                 if (detalle.M.f22_opcion_Watch?.S && detalle.M.f24_url_Final?.S) {
+//                     const enlaceWatch = document.createElement('a');
+//                     enlaceWatch.href = detalle.M.f24_url_Final.S;
+//                     enlaceWatch.target = '_blank';
+//                     enlaceWatch.textContent = detalle.M.f22_opcion_Watch.S;
+//                     detalleLi.appendChild(document.createTextNode(' | '));
+//                     detalleLi.appendChild(enlaceWatch);
+//                     detalleLi.appendChild(document.createTextNode(' | '));
+//                 }
+//                 eventoDetalle.appendChild(detalleLi);
+//             });
+//             detalleEventoContainer.appendChild(eventoDetalle);
+//             eventoDiv.appendChild(detalleEventoContainer);
+//         } else {
+//             console.error("data.f20_Detalles_Evento no es un objeto o es nulo.");
+//         }
+    
+//         // Agregar el elemento del evento al contenedor principal
+//         eventosContainer.appendChild(eventoDiv);
+//       // }    
+//     });
+
+//     // Resto del código para procesar y mostrar los resultados...
+//     console.log("Conexion exitosa. Datos recuperados correctamente 4.");
+//   } catch (error) {
+//     console.error("Error al conectar con la base de datos:", error);
+//   }
+// };
+
 
 // Llamada a la funcion fetchData para verificar la conexion y recuperar datos
 document.addEventListener('DOMContentLoaded', fetchData);

@@ -2,100 +2,103 @@ body {
   background-color: black;
 }
 
-/* Ajustes adicionales segun sea necesario */
+/* Ajustes adicionales según sea necesario */
 #logo-container {
-  display: flex;
+  display: flex;  
   justify-content: center;
   align-items: center;
-  height: 20vh; /* O ajusta la altura segun sea necesario */
+  height: 25vh; /* O ajusta la altura según sea necesario */
 }
 
 #search-container {
   text-align: center; /* Centra el contenido horizontalmente */
-  margin-top: 20px; /* Ajusta el margen superior segun sea necesario */
+  margin-top: 20px; /* Ajusta el margen superior según sea necesario */
 }
 
 #search-input {
-  padding: 15px; /* Ajusta el relleno segun sea necesario */
-  font-size: 18px; /* Ajusta el tamano de fuente segun sea necesario */
-  width: 444px; /* Ajusta el ancho segun sea necesario */
+  padding: 15px; /* Ajusta el relleno según sea necesario */
+  font-size: 18px; /* Ajusta el tamaño de fuente según sea necesario */
+  width: 444px; /* Ajusta el ancho según sea necesario */
   border: 2px solid #ccc; /* Agrega un borde para mejorar la apariencia */
   border-radius: 8px; /* Agrega bordes redondeados */
   outline: none; /* Quita el resaltado al hacer clic */
   margin: 0 auto;
 }
 
-#eventos-container {
-  max-width: 888px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
 .logo-image, .banner-image {
   display: block;
   margin: 0 auto;
 }
+
 /* Estilo para el contenedor principal de eventos */
 #eventos-container {
   max-width: 1000px;
-  margin: 0 auto; /* Esto centrara el contenedor en la pagina */
+  margin: 0 auto; /* Esto centrará el contenedor en la página */
   gap: 200px; /* Esto crea el espacio entre las filas y columnas */
   padding: 20px; /* Espacio alrededor de todo el contenedor de eventos */  
 }
 
 /* Estilo para la imagen de la bandera dentro del evento */
 .bandera {
-  width: 35px; /* Ancho de la bandera */
-  height: 35px; /* Alto de la bandera */
+  width: 27px; /* Ancho de la bandera */
+  height: 25px; /* Alto de la bandera */
   margin-right: 10px; /* Espaciado a la derecha de la bandera */
 }
+
 .evento-header {
   display: flex;
   align-items: center; /* Centra verticalmente los elementos */
+  flex-direction: column; /* Cambia la dirección de flexbox a columna */
+  cursor: pointer;
 }
+
 /* Estilo para los eventos dentro del contenedor */
 .evento {
   font-family: "Proxima Nova", system-ui, sans-serif;
-  display: grid; /* Utiliza un enfoque de cuadricula para el diseno */
+  display: grid; /* Utiliza un enfoque de cuadrícula para el diseño */
   grid-template-columns: 1fr; /* Una sola columna */
   grid-gap: 10px; /* Espacio entre las filas y columnas */  
-  /*border: 1px solid gray; /* Agrega un contorno de 2px de ancho y color blanco */
   border-radius: 10px; /* Aplica bordes redondeados con un radio de 10px */
-  /*font-size: 20px; /* Tamano de fuente para los eventos */  
-
-  color:rgb(255, 255, 255);
+  color:rgb(0, 0, 0);
   font-size:14px;
   width:auto;
   padding:12px 9px;
-  border:2px solid #535353;
+  border:2px solid #777777;
   margin:auto;  
-  background-color:#000000;
-  margin-bottom: 5px;
-
-                                 
+  background-color:#ffffff;
+  margin-bottom: 5px;                                 
 }
-
 
 .evento .texto-evento {
   font-size: 22px; /* Tamaño de fuente más grande para el título del evento */
+  margin-bottom: 10px; /* Agrega un margen inferior para separarlo de categoryEvento */
 }
+
+.category-evento {
+  font-size: 16px; /* Ajusta el tamaño de la fuente según sea necesario */
+  display: block; /* Muestra el elemento en una nueva línea */
+}
+
 /* Estilo para el texto dentro de los eventos */  
 .evento p {
-  margin: 0; /* Eliminar el margen predeterminado del parrafo */
+  margin: 0; /* Eliminar el margen predeterminado del párrafo */
 }
+
 .evento .detalle-evento {
   grid-column: 1 / -1; /* Ocupa todas las columnas disponibles */
-  list-style: none; /* Esto eliminara los marcadores de lista */
+  list-style: none; /* Esto eliminará los marcadores de lista */
   font-size: 18px; /* Tamaño de fuente más pequeño para los detalles */
 }
+
 /* Estilo para cada elemento de la lista de detalles */
 .detalle-evento li {
   margin-bottom: 10px; /* Espaciado inferior para separar cada detalle del evento */
 }
-/* Estilo para las imagenes dentro de los detalles del evento */
+
+/* Estilo para las imágenes dentro de los detalles del evento */
 .detalle-evento img {
-  max-width: 100%; /* Ajustar el ancho maximo de las imagenes segun sea necesario */
-  height: auto;  /* Mantener la proporcion original de la imagen */
+  max-width: 100%; /* Ajustar el ancho máximo de las imágenes según sea necesario */
+  height: auto;  /* Mantener la proporción original de la imagen */
 }
 
 /* Estilo para los enlaces dentro de los detalles del evento */
@@ -104,5 +107,13 @@ body {
   text-decoration: none; /* Quita el subrayado predeterminado de los enlaces */
 }
 
+/* Estilo para el contenedor de información del evento */
+.info-evento-container {
+  display: flex;
+  align-items: center;
+}
 
-
+/* Estilo para el contenedor de texto del evento */
+.texto-evento-container {
+  margin-top: 10px; /* Agrega un margen superior para separar el texto del evento */
+}
