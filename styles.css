@@ -2,23 +2,22 @@ body {
   background-color: black;
 }
 
-/* Ajustes adicionales según sea necesario */
 #logo-container {
   display: flex;  
   justify-content: center;
   align-items: center;
-  height: 25vh; /* O ajusta la altura según sea necesario */
+  height: 25vh; /* O ajusta la altura segun sea necesario */
 }
 
 #search-container {
   text-align: center; /* Centra el contenido horizontalmente */
-  margin-top: 20px; /* Ajusta el margen superior según sea necesario */
+  margin-top: 20px; /* Ajusta el margen superior segun sea necesario */
 }
 
 #search-input {
-  padding: 15px; /* Ajusta el relleno según sea necesario */
-  font-size: 18px; /* Ajusta el tamaño de fuente según sea necesario */
-  width: 444px; /* Ajusta el ancho según sea necesario */
+  padding: 15px; /* Ajusta el relleno segun sea necesario */
+  font-size: 18px; /* Ajusta el tamano de fuente segun sea necesario */
+  width: 444px; /* Ajusta el ancho segun sea necesario */
   border: 2px solid #ccc; /* Agrega un borde para mejorar la apariencia */
   border-radius: 8px; /* Agrega bordes redondeados */
   outline: none; /* Quita el resaltado al hacer clic */
@@ -30,90 +29,132 @@ body {
   margin: 0 auto;
 }
 
-/* Estilo para el contenedor principal de eventos */
 #eventos-container {
-  max-width: 1000px;
-  margin: 0 auto; /* Esto centrará el contenedor en la página */
-  gap: 200px; /* Esto crea el espacio entre las filas y columnas */
-  padding: 20px; /* Espacio alrededor de todo el contenedor de eventos */  
+  max-width: 1200px;
+  margin: 0 auto; 
+  gap: 200px;  
+  padding: 200px;
 }
 
-/* Estilo para la imagen de la bandera dentro del evento */
 .bandera {
-  width: 27px; /* Ancho de la bandera */
-  height: 25px; /* Alto de la bandera */
-  margin-right: 10px; /* Espaciado a la derecha de la bandera */
+  width: 25px; 
+  height: 25px; 
+  margin-right: 10px; 
 }
 
 .evento-header {
-  display: flex;
-  align-items: center; /* Centra verticalmente los elementos */
-  flex-direction: column; /* Cambia la dirección de flexbox a columna */
   cursor: pointer;
 }
 
-/* Estilo para los eventos dentro del contenedor */
-.evento {
-  font-family: "Proxima Nova", system-ui, sans-serif;
-  display: grid; /* Utiliza un enfoque de cuadrícula para el diseño */
-  grid-template-columns: 1fr; /* Una sola columna */
-  grid-gap: 10px; /* Espacio entre las filas y columnas */  
-  border-radius: 10px; /* Aplica bordes redondeados con un radio de 10px */
-  color:rgb(0, 0, 0);
-  font-size:14px;
-  width:auto;
-  padding:12px 9px;
-  border:2px solid #777777;
-  margin:auto;  
-  background-color:#ffffff;
-  margin-bottom: 5px;                                 
-}
-
-.evento .texto-evento {
-  font-size: 22px; /* Tamaño de fuente más grande para el título del evento */
-  margin-bottom: 10px; /* Agrega un margen inferior para separarlo de categoryEvento */
-}
-
-.category-evento {
-  font-size: 16px; /* Ajusta el tamaño de la fuente según sea necesario */
-  display: block; /* Muestra el elemento en una nueva línea */
-}
-
-/* Estilo para el texto dentro de los eventos */  
-.evento p {
-  margin: 0; /* Eliminar el margen predeterminado del párrafo */
-}
-
-.evento .detalle-evento {
-  grid-column: 1 / -1; /* Ocupa todas las columnas disponibles */
-  list-style: none; /* Esto eliminará los marcadores de lista */
-  font-size: 18px; /* Tamaño de fuente más pequeño para los detalles */
-}
-
-/* Estilo para cada elemento de la lista de detalles */
-.detalle-evento li {
-  margin-bottom: 10px; /* Espaciado inferior para separar cada detalle del evento */
-}
-
-/* Estilo para las imágenes dentro de los detalles del evento */
-.detalle-evento img {
-  max-width: 100%; /* Ajustar el ancho máximo de las imágenes según sea necesario */
-  height: auto;  /* Mantener la proporción original de la imagen */
-}
-
-/* Estilo para los enlaces dentro de los detalles del evento */
-.detalle-evento a {
-  color: #007BFF; /* Color del texto para los enlaces */
-  text-decoration: none; /* Quita el subrayado predeterminado de los enlaces */
-}
-
-/* Estilo para el contenedor de información del evento */
+ /* Titulos hora y categoria */
 .info-evento-container {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
 }
 
-/* Estilo para el contenedor de texto del evento */
-.texto-evento-container {
-  margin-top: 10px; /* Agrega un margen superior para separar el texto del evento */
+.category-evento {
+  font-size:  15px; 
+  display: block; 
+}
+
+/* name event hora y logos */
+.texto-imagenes-container{
+  /* display: flex; */
+  /* align-items: center; */
+  justify-content: flex-start;
+}
+
+.evento p {
+  margin: 0; 
+}
+
+.evento {
+  font-family: "Proxima Nova", system-ui, sans-serif;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-gap: 1px;
+  border-radius: 1px;
+  color:rgb(0, 0, 0);
+  width:auto;
+  padding: 10px 10px 50px 10px; 
+  border:2px solid #777777;
+  margin:auto;  
+  background-color:#ffffff;
+  margin-bottom: 10px;                                 
+}
+
+.evento {
+  font-size: 22px; 
+  margin-bottom: 10px; 
+}
+.evento .hora-evento {
+  font-size:  22px; 
+  text-align: center; 
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2; 
+}
+
+.texto-evento-izquierda {
+  text-align: left; 
+  position: absolute; 
+  right: 60%;
+  transform: translateX(-1%);
+  z-index: 2;
+}
+
+.logo-evento-local {
+  text-align: left; 
+  position: absolute; 
+  right: 55%;
+  transform: translateX(-1%);
+  z-index: 2;
+}
+
+.logo-evento-visita {
+  text-align: left; 
+  position: absolute;
+  left: 55%;
+  transform: translateX(+1%);
+  z-index: 2;
+}
+
+.texto-evento-derecha {
+  text-align: left; 
+  position: absolute;
+  left: 60%;
+  transform: translateX(+1%);
+  z-index: 2;
+}
+
+
+/*
+-------Detalles
+*/
+
+.evento .detalle-evento {
+  grid-column: 1 / -1; 
+  list-style: none; 
+  font-size: 20px; 
+  padding-top: 40px; /* Espacio arriba */
+  padding-right: 10px; /* Espacio a la derecha */
+  /*padding-bottom: 10px;  Espacio abajo */
+  padding-left: 10px; /* Espacio a la izquierda */
+  padding-bottom: 0px !important;
+}
+
+.detalle-evento li {
+  margin-bottom: 10px; 
+}
+
+.detalle-evento img {
+  max-width: 100%; 
+  height: auto;  
+}
+
+.detalle-evento a {
+  color: #007BFF;
+  text-decoration: none; 
 }
