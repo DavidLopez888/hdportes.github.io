@@ -114,6 +114,7 @@ const fetchData = async () => {
       // Calcular la diferencia de horas entre la hora de ejecucion del usuario y la hora ajustada del evento
       const diferenciaHoras = calcularDiferenciaHoras(horaEjecucionUsuario, horaAjustada);
       const proveedor = typeof data.f02_proveedor === 'object' ? data.f02_proveedor.S : data.f02_proveedor;
+    
       if ((diferenciaHoras >= -120 && diferenciaHoras <= 15) || (typeof proveedor === 'string' && proveedor.includes("LiveTV"))) {
         // Crear un elemento div para cada evento
         const eventoDiv = document.createElement('div');

@@ -11,7 +11,7 @@ body {
 
 #search-container {
   text-align: center; /* Centra el contenido horizontalmente */
-  margin-top: 20px; /* Ajusta el margen superior segun sea necesario */
+  margin-top: 1px; /* Ajusta el margen superior segun sea necesario */
 }
 
 #search-input {
@@ -77,7 +77,7 @@ body {
   display: grid;
   grid-template-columns: 1fr;
   grid-gap: 1px;
-  border-radius: 1px;
+  border-radius: 20px;
   color:rgb(0, 0, 0);
   width:auto;
   padding: 10px 10px 50px 10px; 
