@@ -35,7 +35,7 @@ body {
   gap: 100px;  
   padding-top: 20px; /* Espacio arriba */
   padding-right: 40px; /* Espacio a la derecha */
-  /*padding-bottom: 10px;  Espacio abajo */
+  padding-bottom: 1px;  /*Espacio abajo */
   padding-left: 40px; /* Espacio a la izquierda */
 }
 
@@ -80,7 +80,10 @@ body {
   border-radius: 20px;
   color:rgb(0, 0, 0);
   width:auto;
-  padding: 10px 10px 50px 10px; 
+  padding-top: 10px; 
+  padding-right: 10px; 
+  padding-bottom: 50px;  
+  padding-left: 10px; 
   border:2px solid #ffffff;
   margin:auto;  
   background-color:#ffffff;
@@ -143,9 +146,8 @@ body {
   font-size: 20px; 
   padding-top: 40px; /* Espacio arriba */
   padding-right: 10px; /* Espacio a la derecha */
-  /*padding-bottom: 10px;  Espacio abajo */
-  padding-left: 10px; /* Espacio a la izquierda */
-  padding-bottom: 0px !important;
+  padding-bottom: -100px;  /*Espacio abajo */
+  padding-left: 20px; /* Espacio a la izquierda */
 }
 
 .detalle-evento li {
