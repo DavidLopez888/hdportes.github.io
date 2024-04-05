@@ -112,8 +112,8 @@ horaEjecucionUsuarioCoDate.setMinutes(parseInt(horaEjecucionUsuarioCo.substring(
 const horamenosDate = new Date(horaEjecucionUsuarioCoDate.getTime() - 120 * 60000);
 const horamenos = horamenosDate.toTimeString().substring(0, 5);
 
-// Calcular hora más 15 minutos
-const horamasDate = new Date(horaEjecucionUsuarioCoDate.getTime() + 15 * 60000);
+// Calcular hora mas 15 minutos
+const horamasDate = new Date(horaEjecucionUsuarioCoDate.getTime() + 10 * 60000);
 const horamas = horamasDate.toTimeString().substring(0, 5);
 
 const fetchData = async () => {
