@@ -120,7 +120,7 @@ const fetchData = async () => {
   try {
       const params = {
         TableName: 'eventos',
-        FilterExpression: 'attribute_exists(f04_hora_event) AND ((#f04_hora_event >= :horamenos AND #f04_hora_event <= :horamas) OR contains(#proveedor, :proveedor))',
+        FilterExpression: 'attribute_exists(f04_hora_event) AND ((#f04_hora_event >= :horamenos AND #f04_hora_event <= :horamas) OR contains(#proveedor, :proveedor)) AND attribute_exists(f20_Detalles_Evento)',
         ExpressionAttributeNames: {
           '#f04_hora_event': 'f04_hora_event',
           '#proveedor': 'f02_proveedor'
@@ -139,11 +139,9 @@ const fetchData = async () => {
       const diferenciaHorariaUsuario = await obtenerDiferenciaHorariaUsuario();
       // Limpiar el contenido actual del contenedor
       eventosContainer.innerHTML = '';
-
       const eventosOrdenados = result.Items ? result.Items.filter(item => {
         return typeof item.f04_hora_event.S === 'string';}).sort((a, b) => {
-          return b.f04_hora_event.S.localeCompare(a.f04_hora_event.S);}) : [];
-          
+          return b.f04_hora_event.S.localeCompare(a.f04_hora_event.S);}) : [];          
 
       eventosOrdenados.forEach((doc) => {
         const data = doc;
