@@ -30,7 +30,7 @@ body {
 }
 
 #eventos-container {
-  max-width: auto;
+  max-width: 1000px;
   margin: 0 auto; 
   gap: 100px;  
   padding-top: 20px; /* Espacio arriba */
