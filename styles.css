@@ -49,22 +49,23 @@ body {
   cursor: pointer;
 }
 
- /* Titulos hora y categoria */
+ /* Titulos categoria */
 .info-evento-container {
   display: flex;
   align-items: center;
   justify-content: flex-start;
+  margin-bottom: 10px; 
 }
 
 .category-evento {
   font-size:  15px; 
-  display: block; 
+  /*display: block;*/
 }
 
 /* name event hora y logos */
 .texto-imagenes-container{
-  /* display: flex; */
-  /* align-items: center; */
+  display: flex;
+  align-items: center;
   justify-content: flex-start;
 }
 
@@ -82,7 +83,7 @@ body {
   width:auto;
   padding-top: 10px; 
   padding-right: 10px; 
-  padding-bottom: 50px;  
+  padding-bottom: 35px;  
   padding-left: 10px; 
   border:2px solid #ffffff;
   margin:auto;  
