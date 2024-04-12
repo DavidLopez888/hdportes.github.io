@@ -7,26 +7,7 @@
     <meta charset="UTF-8">
     
     <title>HDeportes Ultor</title>
-    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1577.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/abp-filter-parser@2.3.6/dist/abp-filter-parser.min.js"></script>
-    <script>
-        // Cargar EasyList de Adblock Plus
-        fetch('https://easylist.to/easylist/easylist.txt')
-            .then(response => response.text())
-            .then(text => {
-                const filter = abpFilterParser.parse(text);
-                // Aplicar el filtro a la pagina
-                filter.forEach(rule => {
-                    if (rule instanceof abpFilterParser.CosmeticFilter && rule.hit === 'tag') {
-                        const elements = document.querySelectorAll(rule.selector);
-                        elements.forEach(element => element.style.display = 'none');
-                    }
-                });
-            })
-            .catch(error => {
-                console.error('Error al cargar EasyList:', error);
-            });
-    </script>        
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1577.0.min.js"></script>       
 </head>
 <body>
     <!-- <h1>HDeportes</h1> -->
