@@ -278,6 +278,27 @@ const fetchData = async () => {
             detalleEventoContainer.classList.add('detalle-evento-container');
             detalleEventoContainer.style.display = 'none'; // Ocultar por defecto
 
+            const closeButton = document.getElementById('close-button');
+            const backgroundOverlay = document.getElementById('background-overlay');
+            const iframeContainer = document.getElementById('iframe-container');
+            const iframe = document.getElementById('detalle-iframe');    
+                        
+            // Función para cerrar el iframe y ocultar el fondo semi-transparente
+            function cerrarIframe() {
+              iframeContainer.style.display = 'none';
+              backgroundOverlay.style.display = 'none';
+              // Limpiar la URL del iframe para evitar que el video siga reproduciéndose
+              iframe.src = '';
+            }      
+            // Agregar un controlador de eventos para cerrar el iframe cuando se hace clic en el botón de cerrar
+            closeButton.addEventListener('click', cerrarIframe);
+
+            function mostrarIframe(url) {
+              iframe.src = url;
+              iframeContainer.style.display = 'block';
+              backgroundOverlay.style.display = 'block';
+          }            
+            
             const eventoDetalle = document.createElement('ul');
             eventoDetalle.classList.add('detalle-evento');
             data.f20_Detalles_Evento.L.forEach(detalle => {
@@ -290,30 +311,50 @@ const fetchData = async () => {
                     detalleLi.appendChild(imagenIdiom);
                 }
                 if (detalle.M.f23_text_Idiom?.S && detalle.M.f24_url_Final?.S) {
-                    const enlace = document.createElement('a');
-                    enlace.href = detalle.M.f24_url_Final.S;
-                    enlace.target = '_blank';
-                    enlace.textContent = detalle.M.f23_text_Idiom.S;
-                    detalleLi.appendChild(document.createTextNode(' | '));
-                    detalleLi.appendChild(enlace);
-                }
-                if (detalle.M.f22_opcion_Watch?.S && detalle.M.f24_url_Final?.S) {
-                    const enlaceWatch = document.createElement('a');
-                    enlaceWatch.href = detalle.M.f24_url_Final.S;
-                    enlaceWatch.target = '_blank';
-                    enlaceWatch.textContent = detalle.M.f22_opcion_Watch.S;
-                    detalleLi.appendChild(document.createTextNode(' | '));
-                    detalleLi.appendChild(enlaceWatch);
-                    detalleLi.appendChild(document.createTextNode(' | '));
-                }
+                  const enlace = document.createElement('a');
+                  enlace.href = detalle.M.f24_url_Final.S;
+                  enlace.textContent = detalle.M.f23_text_Idiom.S;
+                  detalleLi.appendChild(document.createTextNode(' | '));
+          
+                  // Verificar si la URL contiene cierto texto
+                  if (enlace.href.includes("atptour")) {
+                      enlace.target = "_blank";
+                  } else {
+                      enlace.addEventListener('click', function(event) {
+                          event.preventDefault();
+                          mostrarIframe(enlace.href);
+                          //iframeContainer.style.display = iframeContainer.style.display === 'block' ? 'none' : 'block';
+                          //iframe.src = enlace.href;
+                      });
+                  }                  
+                  detalleLi.appendChild(enlace);
+              }
+          
+              if (detalle.M.f22_opcion_Watch?.S && detalle.M.f24_url_Final?.S) {
+                  const enlaceWatch = document.createElement('a');
+                  enlaceWatch.href = detalle.M.f24_url_Final.S;
+                  enlaceWatch.textContent = detalle.M.f22_opcion_Watch.S;
+                  detalleLi.appendChild(document.createTextNode(' | '));
+                  if (enlaceWatch.href.includes("atptour") || enlaceWatch.href.includes("acestream")) {
+                      enlaceWatch.target = "_blank";
+                  } else {
+                      enlaceWatch.addEventListener('click', function(event) {
+                          event.preventDefault();
+                          mostrarIframe(enlaceWatch.href);
+                          //iframeContainer.style.display = iframeContainer.style.display === 'block' ? 'none' : 'block';
+                          //iframe.src = enlaceWatch.href;
+                      });
+                  }          
+                  detalleLi.appendChild(enlaceWatch);
+                  detalleLi.appendChild(document.createTextNode(' | '));
+              }
                 eventoDetalle.appendChild(detalleLi);
-            });
+            });           
             detalleEventoContainer.appendChild(eventoDetalle);
             eventoDiv.appendChild(detalleEventoContainer);
         } else {
             console.error("data.f20_Detalles_Evento no es un objeto o es nulo.");
         }
-
         // Agregar el elemento del evento al contenedor principal
         eventosContainer.appendChild(eventoDiv);
         //}
