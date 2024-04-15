@@ -283,14 +283,14 @@ const fetchData = async () => {
             const iframeContainer = document.getElementById('iframe-container');
             const iframe = document.getElementById('detalle-iframe');    
                         
-            // Función para cerrar el iframe y ocultar el fondo semi-transparente
+            // Funcion para cerrar el iframe y ocultar el fondo semi-transparente
             function cerrarIframe() {
               iframeContainer.style.display = 'none';
               backgroundOverlay.style.display = 'none';
-              // Limpiar la URL del iframe para evitar que el video siga reproduciéndose
+              // Limpiar la URL del iframe para evitar que el video siga reproduciendose
               iframe.src = '';
             }      
-            // Agregar un controlador de eventos para cerrar el iframe cuando se hace clic en el botón de cerrar
+            // Agregar un controlador de eventos para cerrar el iframe cuando se hace clic en el boton de cerrar
             closeButton.addEventListener('click', cerrarIframe);
 
             function mostrarIframe(url) {
