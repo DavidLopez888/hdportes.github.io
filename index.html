@@ -22,7 +22,20 @@
     <div id="eventos-container"> </div>
     <div id="background-overlay"></div>
     <div id="iframe-container" style="display: none;">
-        <iframe id="detalle-iframe" allowfullscreen style="width: 100%; height: 100%; position: fixed; top: 0; left: 0; right: 0; bottom: 0; border: none;" scrolling="no" name="streamframe" allow="encrypted-media"></iframe>
+        <iframe id="detalle-iframe" 
+                allowfullscreen 
+                style="width: 100%; height: 100%; position: fixed; top: 0; left: 0; right: 0; bottom: 0; border: none;" 
+                scrolling="no" 
+                name="streamframe" 
+                allow="autoplay; encrypted-media">
+        </iframe>
+        <!-- <iframe id="detalle-iframe" 
+                allowfullscreen 
+                style="width: 100%; height: 100%; position: fixed; top: 0; left: 0; right: 0; bottom: 0; border: none;" 
+                scrolling="no" 
+                name="streamframe" 
+                allow="encrypted-media">
+        </iframe>         -->
         <button id="close-button">X</button>
     </div>    
     <script type="module" src="base-interactions.js?v=1"></script>
