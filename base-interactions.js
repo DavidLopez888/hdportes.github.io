@@ -319,19 +319,23 @@ const fetchData = async () => {
                   if (enlace.href.includes("atptour")) {
                       enlace.target = "_blank";
                   } 
-                  // Verificar si la URL es de YouTube para lanzar la app
-                  else if (enlace.href.includes("youtube.com")) {
-                      // Extraer el ID del video de YouTube desde la URL, incluyendo formatos "embed"
-                      const videoIdMatch = enlace.href.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|v\/|embed\/|user\/(?:\S+\/)?\S*[^#\&\?]*))([^#\&\?]*).*/);
-                      if (videoIdMatch && videoIdMatch[1]) {
-                          // Cambiar el enlace para abrir la app de YouTube con el formato correcto
-                          enlace.href = `vnd.youtube://${videoIdMatch[1]}`;
+                    else if (enlace.href.includes("youtube.com")) {
+                      // Verificar si el dispositivo es movil
+                      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                      if (isMobile) {
+                          // Modificar el enlace para intentar abrir la aplicación de YouTube
+                          // Extraer el ID del video desde la URL original
+                          const videoId = enlace.href.split("/embed/")[1].split("?")[0];
+                          // Cambiar el enlace para abrir la app de YouTube
+                          enlace.href = `vnd.youtube://${videoId}`;
+                      } else {
+                          // En PCs, abrir en el iframe como se estaba haciendo
+                          enlace.addEventListener('click', function(event) {
+                              event.preventDefault();
+                              mostrarIframe(enlace.href);
+                          });
                       }
-                      enlace.addEventListener('click', function(event) {
-                          event.preventDefault(); // Prevenir la navegación estándar
-                          window.location.href = enlace.href; // Intentar abrir la app de YouTube
-                      });
-                  }
+                    }                
                   else {
                       enlace.addEventListener('click', function(event) {
                           event.preventDefault();
