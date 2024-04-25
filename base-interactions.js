@@ -320,6 +320,7 @@ const fetchData = async () => {
                       enlace.target = "_blank";
                   } 
                     else if (enlace.href.includes("youtube.com")) {
+                      console.log("entra por youtube.", enlace.href);
                       // Verificar si el dispositivo es movil
                       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
                       if (isMobile) {
@@ -328,6 +329,7 @@ const fetchData = async () => {
                           const videoId = enlace.href.split("/embed/")[1].split("?")[0];
                           // Cambiar el enlace para abrir la app de YouTube
                           enlace.href = `vnd.youtube://${videoId}`;
+                          console.log("cambio link de youtube por: ", videoId);
                       } else {
                           // En PCs, abrir en el iframe como se estaba haciendo
                           enlace.addEventListener('click', function(event) {
@@ -355,7 +357,25 @@ const fetchData = async () => {
                       if (enlaceWatch.href.includes("atptour")) {
                         enlaceWatch.textContent = "ATP Tour"
                       }                        
-                  } else {
+                  } 
+                  else if (enlace.href.includes("youtube.com")) {
+                    // Verificar si el dispositivo es movil
+                    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                    if (isMobile) {
+                        // Modificar el enlace para intentar abrir la aplicación de YouTube
+                        // Extraer el ID del video desde la URL original
+                        const videoId = enlace.href.split("/embed/")[1].split("?")[0];
+                        // Cambiar el enlace para abrir la app de YouTube
+                        enlace.href = `vnd.youtube://${videoId}`;
+                    } else {
+                        // En PCs, abrir en el iframe como se estaba haciendo
+                        enlace.addEventListener('click', function(event) {
+                            event.preventDefault();
+                            mostrarIframe(enlace.href);
+                        });
+                    }
+                  }                  
+                  else {
                       enlaceWatch.addEventListener('click', function(event) {
                           event.preventDefault();
                           mostrarIframe(enlaceWatch.href);
