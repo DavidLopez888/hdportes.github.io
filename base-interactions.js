@@ -113,7 +113,7 @@ const horamenosDate = new Date(horaEjecucionUsuarioCoDate.getTime() - 120 * 6000
 const horamenos = horamenosDate.toTimeString().substring(0, 5);
 
 // Calcular hora mas 15 minutos
-const horamasDate = new Date(horaEjecucionUsuarioCoDate.getTime() + 10 * 60000);
+const horamasDate = new Date(horaEjecucionUsuarioCoDate.getTime() + 25 * 60000);
 const horamas = horamasDate.toTimeString().substring(0, 5);
 
 const fetchData = async () => {
@@ -314,17 +314,28 @@ const fetchData = async () => {
                   const enlace = document.createElement('a');
                   enlace.href = detalle.M.f24_url_Final.S;
                   enlace.textContent = detalle.M.f23_text_Idiom.S;
-                  detalleLi.appendChild(document.createTextNode(' | '));
-          
+                  detalleLi.appendChild(document.createTextNode(' | '));          
                   // Verificar si la URL contiene cierto texto
                   if (enlace.href.includes("atptour")) {
                       enlace.target = "_blank";
-                  } else {
+                  } 
+                  // Verificar si la URL es de YouTube para lanzar la app
+                  else if (enlace.href.includes("youtube.com")) {
+                      // Extraer el ID del video de YouTube desde la URL, incluyendo formatos "embed"
+                      const videoIdMatch = enlace.href.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|v\/|embed\/|user\/(?:\S+\/)?\S*[^#\&\?]*))([^#\&\?]*).*/);
+                      if (videoIdMatch && videoIdMatch[1]) {
+                          // Cambiar el enlace para abrir la app de YouTube con el formato correcto
+                          enlace.href = `vnd.youtube://${videoIdMatch[1]}`;
+                      }
+                      enlace.addEventListener('click', function(event) {
+                          event.preventDefault(); // Prevenir la navegación estándar
+                          window.location.href = enlace.href; // Intentar abrir la app de YouTube
+                      });
+                  }
+                  else {
                       enlace.addEventListener('click', function(event) {
                           event.preventDefault();
                           mostrarIframe(enlace.href);
-                          //iframeContainer.style.display = iframeContainer.style.display === 'block' ? 'none' : 'block';
-                          //iframe.src = enlace.href;
                       });
                   }                  
                   detalleLi.appendChild(enlace);
@@ -337,16 +348,16 @@ const fetchData = async () => {
                   detalleLi.appendChild(document.createTextNode(' | '));
                   if (enlaceWatch.href.includes("atptour") || enlaceWatch.href.includes("acestream")) {
                       enlaceWatch.target = "_blank";
+                      if (enlaceWatch.href.includes("atptour")) {
+                        enlaceWatch.textContent = "ATP Tour"
+                      }                        
                   } else {
                       enlaceWatch.addEventListener('click', function(event) {
                           event.preventDefault();
                           mostrarIframe(enlaceWatch.href);
-                          //iframeContainer.style.display = iframeContainer.style.display === 'block' ? 'none' : 'block';
-                          //iframe.src = enlaceWatch.href;
                       });
-                  }          
-                  detalleLi.appendChild(enlaceWatch);
-                  detalleLi.appendChild(document.createTextNode(' | '));
+                  }
+                  detalleLi.appendChild(enlaceWatch);                  
               }
                 eventoDetalle.appendChild(detalleLi);
             });           
@@ -360,7 +371,7 @@ const fetchData = async () => {
         //}
       });
 
-      console.log("Conexion exitosa. Datos recuperados correctamente 3.");
+      console.log("Conexion exitosa. Datos recuperados correctamente.");
   } catch (error) {
     console.error("Error al conectar con la base de datos:", error);
   }
@@ -387,3 +398,46 @@ searchInput.addEventListener('input', function() {
         }
     });
 });
+
+
+
+//---BLOQUEAR ADS
+
+// Funcion para cargar y procesar el archivo de EasyList
+async function cargarEasyList() {
+  try {
+      const response = await fetch('https://easylist.to/easylist/easylist.txt');
+      const text = await response.text();
+      const lines = text.split('\n');
+      const rules = lines.filter(line => line.startsWith('||')); // Filtrar solo las reglas
+
+      return rules;
+  } catch (error) {
+      console.error('Error al cargar EasyList:', error);
+      return [];
+  }
+}
+
+// Funcion para verificar si una URL coincide con alguna regla de EasyList
+function matchesEasyList(url, rules) {
+  return rules.some(rule => url.includes(rule));
+}
+
+// Evento para detectar cuando se carga un iframe
+document.addEventListener('DOMContentLoaded', async function() {
+  const iframes = document.querySelectorAll('iframe');
+  const easyListRules = await cargarEasyList(); // Cargar EasyList al cargar la pagina
+
+  iframes.forEach(iframe => {
+      iframe.addEventListener('load', function() {
+          const iframeUrl = iframe.src;
+
+          if (matchesEasyList(iframeUrl, easyListRules)) {
+              // Ocultar el iframe u otro tratamiento para bloquear el anuncio
+              iframe.style.display = 'none';
+              console.log('Se ha bloqueado un anuncio en el iframe con URL:', iframeUrl);
+          }
+      });
+  });
+});
+
