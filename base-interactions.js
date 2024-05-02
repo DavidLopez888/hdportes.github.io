@@ -115,6 +115,13 @@ function calcularDiferenciaHoras(hora1, hora2) {
   return diferenciaHoras * 60 + diferenciaMinutos;
 }
 
+function extraerVideoIdDeYouTube(url) {
+  const regex = /(?:embed\/|watch\?v=)([^?&]+)/; // Esta expresión regular busca 'embed/' o 'watch?v=' seguido de cualquier cosa hasta un '?' o '&'
+  const match = url.match(regex);
+  return match ? match[1] : null; // Devuelve el grupo capturado que contiene el ID del video o null si no se encuentra
+}
+
+
 // Obtener la hora actual en la zona horaria del sistema local
 const horaActual = new Date();
 // Obtener el desplazamiento horario de la zona horaria del sistema local
@@ -280,7 +287,6 @@ const fetchData = async () => {
           horaEvento.classList.add('hora-evento');
 
           textoImagenesContainer.appendChild(horaEvento);
-          console.log("La longitud de la cadena es:", textoEvento.textContent.length);
           // Si no contiene "vs", simplemente agregamos el texto original
           if (textoEvento.textContent.length > 26) {
             categoryEvento.textContent += " | " + textoEvento.textContent;
@@ -352,18 +358,21 @@ const fetchData = async () => {
                     else if (enlace.href.includes("youtube.com")) {
                       // Verificar si el dispositivo es movil
                       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                      if (isMobile) {
-                          // Modificar el enlace para intentar abrir la aplicación de YouTube
-                          // Extraer el ID del video desde la URL original
-                          const videoId = enlace.href.split("/embed/")[1].split("?")[0];
-                          // Cambiar el enlace para abrir la app de YouTube
-                          enlace.href = `vnd.youtube://${videoId}`;
+                      const videoId = extraerVideoIdDeYouTube(enlace.href);
+                      if (videoId) {
+                        if (isMobile) {
+                            // Modificar el enlace para intentar abrir la aplicación de YouTube
+                            enlace.href = `vnd.youtube://${videoId}`;
+                            enlace.target = "_blank"; 
+                        } else {
+                            // En PCs, abrir en el iframe como se estaba haciendo
+                            enlace.addEventListener('click', function(event) {
+                                event.preventDefault();
+                                mostrarIframe(`https://www.youtube.com/embed/${videoId}?autoplay=1`);
+                            });
+                        }
                       } else {
-                          // En PCs, abrir en el iframe como se estaba haciendo
-                          enlace.addEventListener('click', function(event) {
-                              event.preventDefault();
-                              mostrarIframe(enlace.href);
-                          });
+                          console.error('No se pudo extraer el ID del video de YouTube de la URL:', enlace.href);
                       }
                     }                
                   else {
@@ -389,18 +398,21 @@ const fetchData = async () => {
                     else if (enlaceWatch.href.includes("youtube.com")) {
                       // Verificar si el dispositivo es movil
                       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                      if (isMobile) {
-                          // Modificar el enlace para intentar abrir la aplicación de YouTube
-                          // Extraer el ID del video desde la URL original
-                          const videoId = enlaceWatch.href.split("/embed/")[1].split("?")[0];
-                          // Cambiar el enlace para abrir la app de YouTube
-                          enlaceWatch.href = `vnd.youtube://${videoId}`;
+                      const videoId = extraerVideoIdDeYouTube(enlaceWatch.href);
+                      if (videoId) {
+                        if (isMobile) {
+                            // Modificar el enlace para intentar abrir la aplicación de YouTube
+                            enlaceWatch.href = `vnd.youtube://${videoId}`;
+                            enlaceWatch.target = "_blank"; 
+                        } else {
+                            // En PCs, abrir en el iframe como se estaba haciendo
+                            enlaceWatch.addEventListener('click', function(event) {
+                                event.preventDefault();
+                                mostrarIframe(`https://www.youtube.com/embed/${videoId}?autoplay=1`);
+                            });
+                        }
                       } else {
-                          // En PCs, abrir en el iframe como se estaba haciendo
-                          enlaceWatch.addEventListener('click', function(event) {
-                              event.preventDefault();
-                              mostrarIframe(enlaceWatch.href);
-                          });
+                          console.error('No se pudo extraer el ID del video de YouTube de la URL:', enlaceWatch.href);
                       }
                     }                  
                   else {
