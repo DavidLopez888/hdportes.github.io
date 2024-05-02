@@ -8,6 +8,31 @@ AWS.config.update({
 // Crea una instancia de DynamoDB
 var dynamodb = new AWS.DynamoDB();
 
+//ADBLOCK
+// import { FiltersEngine } from '@cliqz/adblocker';
+// import fetch from 'cross-fetch';
+
+// async function setupAdblocker() {
+//   // Fetch the filter list (EasyList)
+//   const response = await fetch('https://easylist.to/easylist/easylist.txt');
+//   const easyListText = await response.text();
+//   const engine = FiltersEngine.parse(easyListText);  // Usar parse directamente con el texto
+
+//   // Ahora puedes usar `engine.match` para comprobar URLs
+//   // function para verificar si una URL debe ser bloqueada
+//   function checkUrl(url) {
+//     const request = { url, type: 'script' };
+//     return engine.match(request);
+//   }
+
+//   // Ejemplo de uso
+//   const shouldBlock = checkUrl('https://example.com/ad.js');
+//   console.log('Bloquear:', shouldBlock);  // Logs true si debe ser bloqueado, false si no
+// }
+
+// setupAdblocker();
+
+
 // Funcion para obtener la diferencia horaria entre el UTC-6 y la ubicacion del usuario
 async function obtenerDiferenciaHorariaUsuario() {
   try {
@@ -255,10 +280,15 @@ const fetchData = async () => {
           horaEvento.classList.add('hora-evento');
 
           textoImagenesContainer.appendChild(horaEvento);
-
+          console.log("La longitud de la cadena es:", textoEvento.textContent.length);
           // Si no contiene "vs", simplemente agregamos el texto original
-          textoEvento.classList.add('texto-evento-izquierda');
-          textoImagenesContainer.appendChild(textoEvento);
+          if (textoEvento.textContent.length > 26) {
+            categoryEvento.textContent += " | " + textoEvento.textContent;
+          }else{
+            textoEvento.classList.add('texto-evento-izquierda');
+            textoImagenesContainer.appendChild(textoEvento);
+          }
+
         }
         // Agregar el contenedor de textoEventoContainer al eventoHeader
         eventoHeader.appendChild(textoImagenesContainer);
@@ -297,7 +327,7 @@ const fetchData = async () => {
               iframe.src = url;
               iframeContainer.style.display = 'block';
               backgroundOverlay.style.display = 'block';
-          }            
+            }            
             
             const eventoDetalle = document.createElement('ul');
             eventoDetalle.classList.add('detalle-evento');
@@ -424,42 +454,41 @@ searchInput.addEventListener('input', function() {
 
 
 //---BLOQUEAR ADS
+// // Funcion para cargar y procesar el archivo de EasyList
+// async function cargarEasyList() {
+//   try {
+//       const response = await fetch('https://easylist.to/easylist/easylist.txt');
+//       const text = await response.text();
+//       const lines = text.split('\n');
+//       const rules = lines.filter(line => line.startsWith('||')); // Filtrar solo las reglas
 
-// Funcion para cargar y procesar el archivo de EasyList
-async function cargarEasyList() {
-  try {
-      const response = await fetch('https://easylist.to/easylist/easylist.txt');
-      const text = await response.text();
-      const lines = text.split('\n');
-      const rules = lines.filter(line => line.startsWith('||')); // Filtrar solo las reglas
+//       return rules;
+//   } catch (error) {
+//       console.error('Error al cargar EasyList:', error);
+//       return [];
+//   }
+// }
 
-      return rules;
-  } catch (error) {
-      console.error('Error al cargar EasyList:', error);
-      return [];
-  }
-}
+// // Funcion para verificar si una URL coincide con alguna regla de EasyList
+// function matchesEasyList(url, rules) {
+//   return rules.some(rule => url.includes(rule));
+// }
 
-// Funcion para verificar si una URL coincide con alguna regla de EasyList
-function matchesEasyList(url, rules) {
-  return rules.some(rule => url.includes(rule));
-}
+// // Evento para detectar cuando se carga un iframe
+// document.addEventListener('DOMContentLoaded', async function() {
+//   const iframes = document.querySelectorAll('iframe');
+//   const easyListRules = await cargarEasyList(); // Cargar EasyList al cargar la pagina
+//   console.log('entra');
+//   iframes.forEach(iframe => {
+//       iframe.addEventListener('load', function() {
+//           const iframeUrl = iframe.src;
 
-// Evento para detectar cuando se carga un iframe
-document.addEventListener('DOMContentLoaded', async function() {
-  const iframes = document.querySelectorAll('iframe');
-  const easyListRules = await cargarEasyList(); // Cargar EasyList al cargar la pagina
-
-  iframes.forEach(iframe => {
-      iframe.addEventListener('load', function() {
-          const iframeUrl = iframe.src;
-
-          if (matchesEasyList(iframeUrl, easyListRules)) {
-              // Ocultar el iframe u otro tratamiento para bloquear el anuncio
-              iframe.style.display = 'none';
-              console.log('Se ha bloqueado un anuncio en el iframe con URL:', iframeUrl);
-          }
-      });
-  });
-});
+//           if (matchesEasyList(iframeUrl, easyListRules)) {
+//               // Ocultar el iframe u otro tratamiento para bloquear el anuncio
+//               iframe.style.display = 'none';
+//               console.log('Se ha bloqueado un anuncio en el iframe con URL:', iframeUrl);
+//           }
+//       });
+//   });
+// });
 
