@@ -338,13 +338,15 @@ const fetchData = async () => {
             const eventoDetalle = document.createElement('ul');
             eventoDetalle.classList.add('detalle-evento');
             data.f20_Detalles_Evento.L.forEach(detalle => {
+              //console.log("detalle.M.f22_opcion_Watch?.S.", detalle.M.f22_opcion_Watch?.S);
+              if (!detalle.M.f22_opcion_Watch?.S || !detalle.M.f22_opcion_Watch.S.includes("sin_data")) {
                 const detalleLi = document.createElement('li');
                 if (detalle.M.f21_imagen_Idiom?.S) {
-                    const imagenIdiom = document.createElement('img');
-                    imagenIdiom.src = detalle.M.f21_imagen_Idiom.S;
-                    imagenIdiom.alt = 'Idiom';
-                    detalleLi.appendChild(document.createTextNode(' | '));
-                    detalleLi.appendChild(imagenIdiom);
+                      const imagenIdiom = document.createElement('img');
+                      imagenIdiom.src = detalle.M.f21_imagen_Idiom.S;
+                      imagenIdiom.alt = 'Idiom';
+                      detalleLi.appendChild(document.createTextNode(' | '));
+                      detalleLi.appendChild(imagenIdiom);
                 }
                 if (detalle.M.f23_text_Idiom?.S && detalle.M.f24_url_Final?.S) {
                   const enlace = document.createElement('a');
@@ -361,7 +363,7 @@ const fetchData = async () => {
                       const videoId = extraerVideoIdDeYouTube(enlace.href);
                       if (videoId) {
                         if (isMobile) {
-                            // Modificar el enlace para intentar abrir la aplicación de YouTube
+                            // Modificar el enlace para intentar abrir la aplicacion de YouTube
                             enlace.href = `vnd.youtube://${videoId}`;
                             enlace.target = "_blank"; 
                         } else {
@@ -382,48 +384,49 @@ const fetchData = async () => {
                       });
                   }                  
                   detalleLi.appendChild(enlace);
-              }
+                }
           
-              if (detalle.M.f22_opcion_Watch?.S && detalle.M.f24_url_Final?.S) {
-                  const enlaceWatch = document.createElement('a');
-                  enlaceWatch.href = detalle.M.f24_url_Final.S;
-                  enlaceWatch.textContent = detalle.M.f22_opcion_Watch.S;
-                  detalleLi.appendChild(document.createTextNode(' | '));
-                  if (enlaceWatch.href.includes("atptour") || enlaceWatch.href.includes("acestream")) {
-                      enlaceWatch.target = "_blank";
-                      if (enlaceWatch.href.includes("atptour")) {
-                        enlaceWatch.textContent = "ATP Tour"
-                      }                        
-                  } 
-                    else if (enlaceWatch.href.includes("youtube.com")) {
-                      // Verificar si el dispositivo es movil
-                      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                      const videoId = extraerVideoIdDeYouTube(enlaceWatch.href);
-                      if (videoId) {
-                        if (isMobile) {
-                            // Modificar el enlace para intentar abrir la aplicación de YouTube
-                            enlaceWatch.href = `vnd.youtube://${videoId}`;
-                            enlaceWatch.target = "_blank"; 
+                if (detalle.M.f22_opcion_Watch?.S && detalle.M.f24_url_Final?.S) {
+                    const enlaceWatch = document.createElement('a');
+                    enlaceWatch.href = detalle.M.f24_url_Final.S;
+                    enlaceWatch.textContent = detalle.M.f22_opcion_Watch.S;
+                    detalleLi.appendChild(document.createTextNode(' | '));
+                    if (enlaceWatch.href.includes("atptour") || enlaceWatch.href.includes("acestream")) {
+                        enlaceWatch.target = "_blank";
+                        if (enlaceWatch.href.includes("atptour")) {
+                          enlaceWatch.textContent = "ATP Tour"
+                        }                        
+                    } 
+                      else if (enlaceWatch.href.includes("youtube.com")) {
+                        // Verificar si el dispositivo es movil
+                        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                        const videoId = extraerVideoIdDeYouTube(enlaceWatch.href);
+                        if (videoId) {
+                          if (isMobile) {
+                              // Modificar el enlace para intentar abrir la aplicación de YouTube
+                              enlaceWatch.href = `vnd.youtube://${videoId}`;
+                              enlaceWatch.target = "_blank"; 
+                          } else {
+                              // En PCs, abrir en el iframe como se estaba haciendo
+                              enlaceWatch.addEventListener('click', function(event) {
+                                  event.preventDefault();
+                                  mostrarIframe(`https://www.youtube.com/embed/${videoId}?autoplay=1`);
+                              });
+                          }
                         } else {
-                            // En PCs, abrir en el iframe como se estaba haciendo
-                            enlaceWatch.addEventListener('click', function(event) {
-                                event.preventDefault();
-                                mostrarIframe(`https://www.youtube.com/embed/${videoId}?autoplay=1`);
-                            });
+                            console.error('No se pudo extraer el ID del video de YouTube de la URL:', enlaceWatch.href);
                         }
-                      } else {
-                          console.error('No se pudo extraer el ID del video de YouTube de la URL:', enlaceWatch.href);
-                      }
-                    }                  
-                  else {
-                      enlaceWatch.addEventListener('click', function(event) {
-                          event.preventDefault();
-                          mostrarIframe(enlaceWatch.href);
-                      });
-                  }
-                  detalleLi.appendChild(enlaceWatch);                  
+                      }                  
+                    else {
+                        enlaceWatch.addEventListener('click', function(event) {
+                            event.preventDefault();
+                            mostrarIframe(enlaceWatch.href);
+                        });
+                    }
+                    detalleLi.appendChild(enlaceWatch);                  
+                }
+                  eventoDetalle.appendChild(detalleLi);
               }
-                eventoDetalle.appendChild(detalleLi);
             });           
             detalleEventoContainer.appendChild(eventoDetalle);
             eventoDiv.appendChild(detalleEventoContainer);
