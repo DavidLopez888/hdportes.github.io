@@ -8,31 +8,6 @@ AWS.config.update({
 // Crea una instancia de DynamoDB
 var dynamodb = new AWS.DynamoDB();
 
-//ADBLOCK
-// import { FiltersEngine } from '@cliqz/adblocker';
-// import fetch from 'cross-fetch';
-
-// async function setupAdblocker() {
-//   // Fetch the filter list (EasyList)
-//   const response = await fetch('https://easylist.to/easylist/easylist.txt');
-//   const easyListText = await response.text();
-//   const engine = FiltersEngine.parse(easyListText);  // Usar parse directamente con el texto
-
-//   // Ahora puedes usar `engine.match` para comprobar URLs
-//   // function para verificar si una URL debe ser bloqueada
-//   function checkUrl(url) {
-//     const request = { url, type: 'script' };
-//     return engine.match(request);
-//   }
-
-//   // Ejemplo de uso
-//   const shouldBlock = checkUrl('https://example.com/ad.js');
-//   console.log('Bloquear:', shouldBlock);  // Logs true si debe ser bloqueado, false si no
-// }
-
-// setupAdblocker();
-
-
 // Funcion para obtener la diferencia horaria entre el UTC-6 y la ubicacion del usuario
 async function obtenerDiferenciaHorariaUsuario() {
   try {
@@ -74,6 +49,73 @@ function obtenerUbicacionUsuario() {
     }
   });
 }
+
+// Nueva función para obtener la ciudad y país de las coordenadas usando Nominatim
+async function obtenerCiudad(latitud, longitud) {
+  const url = `https://nominatim.openstreetmap.org/reverse?lat=${latitud}&lon=${longitud}&format=json&addressdetails=1`;
+
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data && data.address) {
+      const ciudad = data.address.city || data.address.town || data.address.village || "Desconocida"; // Obtiene la ciudad, pueblo o aldea
+      const pais = data.address.country || "Desconocido"; // Obtiene el país
+      return `${ciudad}, ${pais}`;
+    } else {
+      console.error("No se pudo obtener la dirección:", data);
+      return null;
+    }
+  } catch (error) {
+    console.error("Error al obtener la ciudad:", error);
+    return null;
+  }
+}
+
+// Nueva función para guardar la visita en DynamoDB
+async function guardarVisitaEnDynamoDB(latitud, longitud, ciudad, userAgent) {
+  const fechaVisita = new Date().toISOString(); // Formato de fecha ISO
+
+  // Determina el tipo de dispositivo a partir del User-Agent
+  const dispositivo = /Mobi|Android/i.test(userAgent) ? "Móvil" : "PC/Escritorio";
+
+  const params = {
+    TableName: 'registro_visitas',
+    Item: {
+      'fecha_visita': { S: fechaVisita },
+      'lugar_visita': { S: `Lat: ${latitud}, Long: ${longitud}` }, // Guarda la ubicación como un string
+      'ciudad': { S: ciudad || "Desconocida" }, // Guarda la ciudad
+      'user_agent': { S: dispositivo } // Guarda solo el tipo de dispositivo
+    }
+  };
+
+  try {
+    await dynamodb.putItem(params).promise();
+    console.log("Visita guardada en DynamoDB exitosamente.");
+  } catch (error) {
+    console.error("Error al guardar la visita en DynamoDB:", error);
+  }
+}
+
+// Llama a la función para obtener la ubicación del usuario y guardar la visita
+async function registrarVisita() {
+  try {
+    const posicion = await obtenerUbicacionUsuario();
+    const latitud = posicion.coords.latitude;
+    const longitud = posicion.coords.longitude;
+    const userAgent = navigator.userAgent; // Obtener el user agent
+
+    // Obtener ciudad y país
+    const ciudad = await obtenerCiudad(latitud, longitud);
+
+    // Llamar a la función para guardar la visita
+    await guardarVisitaEnDynamoDB(latitud, longitud, ciudad, userAgent);
+  } catch (error) {
+    console.error("Error al registrar la visita:", error);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', registrarVisita);
 
 // Funcion para calcular la diferencia horaria entre dos zonas horarias
 function obtenerDiferenciaHoraria(zonaHoraria1, zonaHoraria2) {
@@ -121,7 +163,6 @@ function extraerVideoIdDeYouTube(url) {
   return match ? match[1] : null; // Devuelve el grupo capturado que contiene el ID del video o null si no se encuentra
 }
 
-
 // Obtener la hora actual en la zona horaria del sistema local
 const horaActual = new Date();
 // Obtener el desplazamiento horario de la zona horaria del sistema local
@@ -162,8 +203,8 @@ const fetchData = async () => {
           ':horamas': { 'S': horamas },
           ':proveedor': { 'S': 'LiveTV' }
         }
-      };    
-    
+      };
+
       const result = await dynamodb .scan(params).promise();
       // const params = {TableName: 'eventos',};
       // const result = await dynamodb.scan(params).promise();
@@ -173,14 +214,13 @@ const fetchData = async () => {
       eventosContainer.innerHTML = '';
       const eventosOrdenados = result.Items ? result.Items.filter(item => {
         return typeof item.f04_hora_event.S === 'string';}).sort((a, b) => {
-          return b.f04_hora_event.S.localeCompare(a.f04_hora_event.S);}) : [];          
+          return b.f04_hora_event.S.localeCompare(a.f04_hora_event.S);}) : [];
 
       eventosOrdenados.forEach((doc) => {
         const data = doc;
         // Calcular la diferencia de horas entre la hora de ejecucion del usuario y la hora ajustada del evento
 
         //const proveedor = typeof data.f02_proveedor === 'object' ? data.f02_proveedor.S : data.f02_proveedor;
-
         const horaAjustada = ajustarHoraEvento(data.f04_hora_event, diferenciaHorariaUsuario);
         //const diferenciaHoras = calcularDiferenciaHoras(horaEjecucionUsuario, horaAjustada);
         //if ((diferenciaHoras >= -120 && diferenciaHoras <= 15) || (typeof proveedor === 'string' && proveedor.includes("LiveTV"))) {
@@ -206,7 +246,7 @@ const fetchData = async () => {
         }
 
         const categoryEvento = document.createElement('p');
-        categoryEvento.textContent = `| ${data.f05_event_categoria && typeof data.f05_event_categoria === 'object' && data.f05_event_categoria.hasOwnProperty('S') ? data.f05_event_categoria.S : ''} `;
+        categoryEvento.textContent = `${data.f05_event_categoria && typeof data.f05_event_categoria === 'object' && data.f05_event_categoria.hasOwnProperty('S') ? data.f05_event_categoria.S : ''} `;
         categoryEvento.classList.add('category-evento');
         categoryEvento.style.marginLeft = '5px';
         infoEventoContainer.appendChild(categoryEvento);
@@ -230,7 +270,7 @@ const fetchData = async () => {
         // console.log("vsIndex: ", vsIndex);
         if (vsIndex !== -1) {
           // Dividir el texto en dos partes antes y despues de "vs"
-          const textoEventoIzquierda_vs = textoEventoString.slice(0, vsIndex).trim(); 
+          const textoEventoIzquierda_vs = textoEventoString.slice(0, vsIndex).trim();
           const textoEventoDerecha_vs = textoEventoString.slice(vsIndex + 3).trim();
 
           // Crear elementos para cada parte del texto
@@ -242,13 +282,13 @@ const fetchData = async () => {
           const horaEvento = document.createElement('p');
           horaEvento.textContent = `${horaAjustada} `;
           horaEvento.style.width = 'fit-content'; // Ajusta el ancho del contenedor al contenido
-          horaEvento.style.margin = 'auto'; // Centra el contenedor horizontalmente          
+          horaEvento.style.margin = 'auto'; // Centra el contenedor horizontalmente
           horaEvento.classList.add('hora-evento');
           textoImagenesContainer.appendChild(horaEvento);
 
           const textoEventoDerechaElement = document.createElement('p');
           textoEventoDerechaElement.textContent = textoEventoDerecha_vs;
-          textoEventoDerechaElement.classList.add('texto-evento-derecha');      
+          textoEventoDerechaElement.classList.add('texto-evento-derecha');
           textoImagenesContainer.appendChild(textoEventoDerechaElement);
 
           // Agregar logotipos a ambos lados de "vs"
@@ -261,8 +301,8 @@ const fetchData = async () => {
             logoLocalImg.style.width = '40px'; // Ajusta el ancho según sea necesario
             logoLocalImg.style.height = 'auto'; // Mantén la proporción original
             logoLocalImg.style.marginRight = '10px'; // Ajusta el margen derecho según sea necesario
-            logoLocalImg.classList.add('logo-evento-local');    
-            textoImagenesContainer.appendChild(logoLocalImg);    
+            logoLocalImg.classList.add('logo-evento-local');
+            textoImagenesContainer.appendChild(logoLocalImg);
             textoImagenesContainer.insertBefore(logoLocalImg, textoEventoIzquierdaElement.nextSibling);
           }
 
@@ -275,15 +315,15 @@ const fetchData = async () => {
             logoVisitaImg.style.width = '40px'; // Ajusta el ancho según sea necesario
             logoVisitaImg.style.height = 'auto'; // Mantén la proporción original
             logoVisitaImg.style.marginLeft = '10px'; // Ajusta el margen izquierdo según sea necesario
-            logoVisitaImg.classList.add('logo-evento-visita'); 
-            textoImagenesContainer.appendChild(logoVisitaImg);     
+            logoVisitaImg.classList.add('logo-evento-visita');
+            textoImagenesContainer.appendChild(logoVisitaImg);
             textoImagenesContainer.insertBefore(logoVisitaImg, textoEventoDerechaElement);
           }
         } else {
           const horaEvento = document.createElement('p');
           horaEvento.textContent = `${horaAjustada} `;
           horaEvento.style.width = 'fit-content'; // Ajusta el ancho del contenedor al contenido
-          horaEvento.style.margin = 'auto'; // Centra el contenedor horizontalmente          
+          horaEvento.style.margin = 'auto'; // Centra el contenedor horizontalmente
           horaEvento.classList.add('hora-evento');
 
           textoImagenesContainer.appendChild(horaEvento);
@@ -317,15 +357,15 @@ const fetchData = async () => {
             const closeButton = document.getElementById('close-button');
             const backgroundOverlay = document.getElementById('background-overlay');
             const iframeContainer = document.getElementById('iframe-container');
-            const iframe = document.getElementById('detalle-iframe');    
-                        
+            const iframe = document.getElementById('detalle-iframe');
+
             // Funcion para cerrar el iframe y ocultar el fondo semi-transparente
             function cerrarIframe() {
               iframeContainer.style.display = 'none';
               backgroundOverlay.style.display = 'none';
               // Limpiar la URL del iframe para evitar que el video siga reproduciendose
               iframe.src = '';
-            }      
+            }
             // Agregar un controlador de eventos para cerrar el iframe cuando se hace clic en el boton de cerrar
             closeButton.addEventListener('click', cerrarIframe);
 
@@ -333,8 +373,8 @@ const fetchData = async () => {
               iframe.src = url;
               iframeContainer.style.display = 'block';
               backgroundOverlay.style.display = 'block';
-            }            
-            
+            }
+
             const eventoDetalle = document.createElement('ul');
             eventoDetalle.classList.add('detalle-evento');
             data.f20_Detalles_Evento.L.forEach(detalle => {
@@ -352,11 +392,11 @@ const fetchData = async () => {
                   const enlace = document.createElement('a');
                   enlace.href = detalle.M.f24_url_Final.S;
                   enlace.textContent = detalle.M.f23_text_Idiom.S;
-                  detalleLi.appendChild(document.createTextNode(' | '));          
+                  detalleLi.appendChild(document.createTextNode(' | '));
                   // Verificar si la URL contiene cierto texto
                   if (enlace.href.includes("atptour")) {
                       enlace.target = "_blank";
-                  } 
+                  }
                     else if (enlace.href.includes("youtube.com")) {
                       // Verificar si el dispositivo es movil
                       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -365,7 +405,7 @@ const fetchData = async () => {
                         if (isMobile) {
                             // Modificar el enlace para intentar abrir la aplicacion de YouTube
                             enlace.href = `vnd.youtube://${videoId}`;
-                            enlace.target = "_blank"; 
+                            enlace.target = "_blank";
                         } else {
                             // En PCs, abrir en el iframe como se estaba haciendo
                             enlace.addEventListener('click', function(event) {
@@ -376,16 +416,16 @@ const fetchData = async () => {
                       } else {
                           console.error('No se pudo extraer el ID del video de YouTube de la URL:', enlace.href);
                       }
-                    }                
+                    }
                   else {
                       enlace.addEventListener('click', function(event) {
                           event.preventDefault();
                           mostrarIframe(enlace.href);
                       });
-                  }                  
+                  }
                   detalleLi.appendChild(enlace);
                 }
-          
+
                 if (detalle.M.f22_opcion_Watch?.S && detalle.M.f24_url_Final?.S) {
                     const enlaceWatch = document.createElement('a');
                     enlaceWatch.href = detalle.M.f24_url_Final.S;
@@ -395,8 +435,8 @@ const fetchData = async () => {
                         enlaceWatch.target = "_blank";
                         if (enlaceWatch.href.includes("atptour")) {
                           enlaceWatch.textContent = "ATP Tour"
-                        }                        
-                    } 
+                        }
+                    }
                       else if (enlaceWatch.href.includes("youtube.com")) {
                         // Verificar si el dispositivo es movil
                         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -405,7 +445,7 @@ const fetchData = async () => {
                           if (isMobile) {
                               // Modificar el enlace para intentar abrir la aplicación de YouTube
                               enlaceWatch.href = `vnd.youtube://${videoId}`;
-                              enlaceWatch.target = "_blank"; 
+                              enlaceWatch.target = "_blank";
                           } else {
                               // En PCs, abrir en el iframe como se estaba haciendo
                               enlaceWatch.addEventListener('click', function(event) {
@@ -416,18 +456,18 @@ const fetchData = async () => {
                         } else {
                             console.error('No se pudo extraer el ID del video de YouTube de la URL:', enlaceWatch.href);
                         }
-                      }                  
+                      }
                     else {
                         enlaceWatch.addEventListener('click', function(event) {
                             event.preventDefault();
                             mostrarIframe(enlaceWatch.href);
                         });
                     }
-                    detalleLi.appendChild(enlaceWatch);                  
+                    detalleLi.appendChild(enlaceWatch);
                 }
                   eventoDetalle.appendChild(detalleLi);
               }
-            });           
+            });
             detalleEventoContainer.appendChild(eventoDetalle);
             eventoDiv.appendChild(detalleEventoContainer);
         } else {
@@ -465,45 +505,4 @@ searchInput.addEventListener('input', function() {
         }
     });
 });
-
-
-
-//---BLOQUEAR ADS
-// // Funcion para cargar y procesar el archivo de EasyList
-// async function cargarEasyList() {
-//   try {
-//       const response = await fetch('https://easylist.to/easylist/easylist.txt');
-//       const text = await response.text();
-//       const lines = text.split('\n');
-//       const rules = lines.filter(line => line.startsWith('||')); // Filtrar solo las reglas
-
-//       return rules;
-//   } catch (error) {
-//       console.error('Error al cargar EasyList:', error);
-//       return [];
-//   }
-// }
-
-// // Funcion para verificar si una URL coincide con alguna regla de EasyList
-// function matchesEasyList(url, rules) {
-//   return rules.some(rule => url.includes(rule));
-// }
-
-// // Evento para detectar cuando se carga un iframe
-// document.addEventListener('DOMContentLoaded', async function() {
-//   const iframes = document.querySelectorAll('iframe');
-//   const easyListRules = await cargarEasyList(); // Cargar EasyList al cargar la pagina
-//   console.log('entra');
-//   iframes.forEach(iframe => {
-//       iframe.addEventListener('load', function() {
-//           const iframeUrl = iframe.src;
-
-//           if (matchesEasyList(iframeUrl, easyListRules)) {
-//               // Ocultar el iframe u otro tratamiento para bloquear el anuncio
-//               iframe.style.display = 'none';
-//               console.log('Se ha bloqueado un anuncio en el iframe con URL:', iframeUrl);
-//           }
-//       });
-//   });
-// });
 
