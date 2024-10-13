@@ -4,17 +4,18 @@
     <link rel="icon" href="./icon_25.ico" type="image/x-icon">
     <link rel="shortcut icon" href="./icon_25.ico" type="image/x-icon">
     <link rel="stylesheet" type="text/css" href="./styles.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta charset="UTF-8">
-    
-    <title>HDportes Ultor</title>
-    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1577.0.min.js"></script>      
+    <meta name="description" content="HDport.es ofrece streaming en vivo de eventos deportivos. Encuentra todos los partidos y eventos deportivos en un solo lugar.">
+    <title>Streaming de Deportes en Vivo- HDport.es</title>
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1577.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/adblock-js/dist/adblock.js"></script>
 </head>
 <body>
-    <!-- <h1>HDeportes</h1> -->
+    <h1>Disfruta de Streaming de Deportes en Vivo</h1>
     <!-- Contenedor para mostrar los eventos -->
     <div id="logo-container">
-        <img src="./HDeportesBanner.png" alt="Banner" class="banner-image">
+        <img src="./HDeportesBanner.png" alt="Banner de HDport.es - Streaming de Deportes en Vivo" class="banner-image">
     </div>
     <div id="search-container">
         <input type="text" id="search-input" placeholder="Buscar eventos...">
@@ -23,15 +24,15 @@
     <div id="eventos-container"> </div>
     <div id="background-overlay"></div>
     <div id="iframe-container" style="display: none;">
-        <iframe id="detalle-iframe" 
-                allowfullscreen 
-                style="width: 100%; height: 100%; position: fixed; top: 0; left: 0; right: 0; bottom: 0; border: none;" 
-                scrolling="no" 
-                name="streamframe" 
+        <iframe id="detalle-iframe"
+                allowfullscreen
+                style="width: 100%; height: 100%; position: fixed; top: 0; left: 0; right: 0; bottom: 0; border: none;"
+                scrolling="no"
+                name="streamframe"
                 allow="autoplay; encrypted-media">
         </iframe>
         <button id="close-button">X</button>
-    </div>    
+    </div>
     <script type="module" src="./base-interactions.js?v=1"></script>
 </body>
 </html>
