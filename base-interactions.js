@@ -209,9 +209,12 @@ const fetchData = async () => {
       // const params = {TableName: 'eventos',};
       // const result = await dynamodb.scan(params).promise();
       const eventosContainer = document.getElementById('eventos-container');
+      const eventosContainerTOP = document.getElementById('eventos-container-top'); // Contenedor adicional
       const diferenciaHorariaUsuario = await obtenerDiferenciaHorariaUsuario();
       // Limpiar el contenido actual del contenedor
       eventosContainer.innerHTML = '';
+      eventosContainerTOP.innerHTML = '';
+
       const eventosOrdenados = result.Items ? result.Items.filter(item => {
         return typeof item.f04_hora_event.S === 'string';}).sort((a, b) => {
           return b.f04_hora_event.S.localeCompare(a.f04_hora_event.S);}) : [];
@@ -298,7 +301,7 @@ const fetchData = async () => {
             logoLocalImg.src = data.f09_logo_Local.S;
             logoLocalImg.alt = 'Logo Local';
             logoLocalImg.classList.add('logo-local');
-            logoLocalImg.style.width = '40px'; // Ajusta el ancho según sea necesario
+            logoLocalImg.style.width = '80px'; // Ajusta el ancho según sea necesario
             logoLocalImg.style.height = 'auto'; // Mantén la proporción original
             logoLocalImg.style.marginRight = '10px'; // Ajusta el margen derecho según sea necesario
             logoLocalImg.classList.add('logo-evento-local');
@@ -312,7 +315,7 @@ const fetchData = async () => {
             logoVisitaImg.src = data.f11_logo_Visita.S;
             logoVisitaImg.alt = 'Logo Visita';
             logoVisitaImg.classList.add('logo-visita');
-            logoVisitaImg.style.width = '40px'; // Ajusta el ancho según sea necesario
+            logoVisitaImg.style.width = '80px'; // Ajusta el ancho según sea necesario
             logoVisitaImg.style.height = 'auto'; // Mantén la proporción original
             logoVisitaImg.style.marginLeft = '10px'; // Ajusta el margen izquierdo según sea necesario
             logoVisitaImg.classList.add('logo-evento-visita');
@@ -465,16 +468,28 @@ const fetchData = async () => {
                     }
                     detalleLi.appendChild(enlaceWatch);
                 }
+                  detalleLi.classList.add('registro-detalle'); // Asegúrate de añadir esta clase
                   eventoDetalle.appendChild(detalleLi);
               }
             });
             detalleEventoContainer.appendChild(eventoDetalle);
             eventoDiv.appendChild(detalleEventoContainer);
+
+            // **Condicionar el contenedor basado en la cantidad de detalles**
+            const numDetalles = data.f20_Detalles_Evento.L.length;
+            if (numDetalles > 20) {
+              eventosContainerTOP.appendChild(eventoDiv);
+            } else {
+              eventosContainer.appendChild(eventoDiv);
+            }
+
+
         } else {
             console.error("data.f20_Detalles_Evento no es un objeto o es nulo.");
         }
         // Agregar el elemento del evento al contenedor principal
-        eventosContainer.appendChild(eventoDiv);
+        //eventosContainer.appendChild(eventoDiv);
+
         //}
       });
 
