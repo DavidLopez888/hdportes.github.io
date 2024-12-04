@@ -251,7 +251,7 @@ const fetchData = async () => {
         const categoryEvento = document.createElement('p');
         categoryEvento.textContent = `${data.f05_event_categoria && typeof data.f05_event_categoria === 'object' && data.f05_event_categoria.hasOwnProperty('S') ? data.f05_event_categoria.S : ''} `;
         categoryEvento.classList.add('category-evento');
-        categoryEvento.style.marginLeft = '5px';
+        categoryEvento.style.marginLeft = '20px';
         infoEventoContainer.appendChild(categoryEvento);
 
         // Agregar el contenedor de infoEventoContainer al eventoHeader

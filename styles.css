@@ -30,7 +30,7 @@
   }
 
   #eventos-container-top {
-    max-width: 1000px;
+    max-width: 1150px;
     margin: 0 auto;
     gap: 500px;
     padding-top: 20px; /* Espacio arriba */
@@ -40,7 +40,7 @@
   }
 
   #eventos-container {
-    max-width: 1000px;
+    max-width: 1100px;
     margin: 0 auto;
     gap: 100px;
     padding-top: 20px; /* Espacio arriba */
