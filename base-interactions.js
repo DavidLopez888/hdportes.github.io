@@ -91,7 +91,7 @@ async function guardarVisitaEnDynamoDB(latitud, longitud, ciudad, userAgent) {
 
   try {
     await dynamodb.putItem(params).promise();
-    console.log("Visita guardada en DynamoDB exitosamente.");
+    // console.log("Visita guardada en DynamoDB exitosamente.");
   } catch (error) {
     console.error("Error al guardar la visita en DynamoDB:", error);
   }
@@ -269,8 +269,6 @@ const fetchData = async () => {
         // Verificar si textoEvento contiene "vs" (mayusculas o minusculas)
         const textoEventoString = textoEvento.textContent;
         const vsIndex = textoEventoString.toLowerCase().indexOf(' vs ');
-        // console.log("textoEventoString.toLowerCase(): ", textoEventoString.toLowerCase());
-        // console.log("vsIndex: ", vsIndex);
         if (vsIndex !== -1) {
           // Dividir el texto en dos partes antes y despues de "vs"
           const textoEventoIzquierda_vs = textoEventoString.slice(0, vsIndex).trim();
@@ -381,7 +379,6 @@ const fetchData = async () => {
             const eventoDetalle = document.createElement('ul');
             eventoDetalle.classList.add('detalle-evento');
             data.f20_Detalles_Evento.L.forEach(detalle => {
-              //console.log("detalle.M.f22_opcion_Watch?.S.", detalle.M.f22_opcion_Watch?.S);
               if (!detalle.M.f22_opcion_Watch?.S || !detalle.M.f22_opcion_Watch.S.includes("sin_data")) {
                 const detalleLi = document.createElement('li');
                 if (detalle.M.f21_imagen_Idiom?.S) {
@@ -493,7 +490,7 @@ const fetchData = async () => {
         //}
       });
 
-      console.log("Conexion exitosa. Datos recuperados correctamente.");
+      // console.log("Conexion exitosa. Datos recuperados correctamente.");
   } catch (error) {
     console.error("Error al conectar con la base de datos:", error);
   }

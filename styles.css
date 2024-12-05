@@ -9,9 +9,67 @@
     height: 25vh; /* O ajusta la altura segun sea necesario */
   }
 
+  .logo-image, .banner-image {
+    display: block;
+    margin: 0 auto;
+  }
+
+  /* Contenedor principal */
+  #layout-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start; /* Alinea los elementos al inicio del contenedor */
+    gap: 20px; /* Espaciado entre las columnas */
+    max-width: 1200px; /* Limita el ancho total */
+    margin: 20px auto; /* Centra el contenedor en la página */
+  }
+
+  /* Contenedor de cada columna */
+  .recommendation-frame {
+    flex: 1; /* Hace que las columnas sean iguales */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: -35px;
+  }
+
+  /* Logo principal en cada columna */
+  .app-logo-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 15px; /* Espaciado entre el logo principal y las demás imágenes */
+  }
+
+  /* Logos de aplicaciones */
+  .app-logo-brave {
+    width: 34px; /* Ancho del logo */
+    height: 46px; /* Alto del logo */
+    margin-bottom: 1px; /* Espaciado entre el logo y las otras imágenes */
+  }
+  .app-logo-ace {
+    width: 13%; /* Ancho del logo */
+    height: 13%; /* Alto del logo */
+    margin-bottom: 1px; /* Espaciado entre el logo y las otras imágenes */
+  }
+
+  /* Imágenes debajo del logo */
+  .app-section a img {
+    width: 90px; /* Ancho de las imágenes debajo del logo */
+    height: 30px; /* Mantiene la proporción */
+    margin-right: 10px; /* Espaciado horizontal entre imágenes */
+  }
+
+  .app-section {
+    display: flex;
+    justify-content: center; /* Centra las imágenes en línea horizontal */
+    flex-wrap: wrap; /* Permite que las imágenes se ajusten si el espacio es limitado */
+  }
+
+  /* Contenedor de búsqueda */
   #search-container {
-    text-align: center; /* Centra el contenido horizontalmente */
-    margin-top: 1px; /* Ajusta el margen superior segun sea necesario */
+    flex: 1;
+    text-align: center;
+    margin-top: 1px;
   }
 
   #search-input {
@@ -24,11 +82,7 @@
     margin: 0 auto;
   }
 
-  .logo-image, .banner-image {
-    display: block;
-    margin: 0 auto;
-  }
-
+  /*--------------------eventos-containers------------------- */
   #eventos-container-top {
     max-width: 1150px;
     margin: 0 auto;
@@ -227,3 +281,5 @@
   z-index: 9998; /* Asegúrate de que esté detrás del iframe-container */
   display: none; /* Ocultar por defecto */
 }
+
+
