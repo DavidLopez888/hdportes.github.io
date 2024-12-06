@@ -104,7 +104,7 @@
     background-color:#000000;
     font-size: 20px;
     margin-bottom: 30px;
-    background-image: url('./vineta.png'), url('./vineta2.png');
+    background-image: url('./images/vineta.png'), url('./images/vineta2.png');
     background-size: 100px 100px,100px 100px;;
     background-repeat: no-repeat, no-repeat;;
     background-position: top left, bottom right;
