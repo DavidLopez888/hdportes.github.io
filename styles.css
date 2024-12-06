@@ -13,58 +13,6 @@
     display: block;
     margin: 0 auto;
   }
-
-  /* Contenedor principal */
-  #layout-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start; /* Alinea los elementos al inicio del contenedor */
-    gap: 20px; /* Espaciado entre las columnas */
-    max-width: 1200px; /* Limita el ancho total */
-    margin: 20px auto; /* Centra el contenedor en la página */
-  }
-
-  /* Contenedor de cada columna */
-  .recommendation-frame {
-    flex: 1; /* Hace que las columnas sean iguales */
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-top: -35px;
-  }
-
-  /* Logo principal en cada columna */
-  .app-logo-container {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 15px; /* Espaciado entre el logo principal y las demás imágenes */
-  }
-
-  /* Logos de aplicaciones */
-  .app-logo-brave {
-    width: 34px; /* Ancho del logo */
-    height: 46px; /* Alto del logo */
-    margin-bottom: 1px; /* Espaciado entre el logo y las otras imágenes */
-  }
-  .app-logo-ace {
-    width: 13%; /* Ancho del logo */
-    height: 13%; /* Alto del logo */
-    margin-bottom: 1px; /* Espaciado entre el logo y las otras imágenes */
-  }
-
-  /* Imágenes debajo del logo */
-  .app-section a img {
-    width: 90px; /* Ancho de las imágenes debajo del logo */
-    height: 30px; /* Mantiene la proporción */
-    margin-right: 10px; /* Espaciado horizontal entre imágenes */
-  }
-
-  .app-section {
-    display: flex;
-    justify-content: center; /* Centra las imágenes en línea horizontal */
-    flex-wrap: wrap; /* Permite que las imágenes se ajusten si el espacio es limitado */
-  }
-
   /* Contenedor de búsqueda */
   #search-container {
     flex: 1;
@@ -283,3 +231,67 @@
 }
 
 
+/* Footer Styles */
+#site-footer {
+  background-color: #222; /* Fondo oscuro */
+  color: #6d6d6d;
+  padding: 20px 0;
+  text-align: center;
+}
+
+.footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 10px;
+}
+
+#site-footer h3 {
+  font-size: 18px;
+  margin-bottom: 15px;
+  color: #979797; /* Color destacado */
+}
+
+.recommendation-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+}
+
+.app-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+ /* Logos de aplicaciones */
+ .app-logo-brave {
+  width: 34px;
+  height: 46px;
+  margin-bottom: 1px;
+}
+.app-logo-ace {
+  width: 13%;
+  height: 13%;
+  margin-bottom: 1px;
+}
+
+.app-logo:hover {
+  transform: scale(1.1);
+}
+
+.app-section img {
+  width: 90px;
+  height: 30px;
+  object-fit: contain;
+}
+
+#site-footer a {
+  text-decoration: none;
+  color: #fff;
+}
+
+#site-footer a:hover {
+  color: #ffffff; /* Cambiar color al pasar el mouse */
+}
