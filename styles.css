@@ -1,6 +1,13 @@
-  body {
-    background-color: black;
-  }
+body {
+  margin: 0; /* Elimina márgenes predeterminados */
+  padding: 0; /* Elimina el padding predeterminado */
+  background-image: url('./images/fondo.jpg'); /* Ruta de la imagen */
+  background-repeat: no-repeat; /* Evita que la imagen se repita */
+  background-size: cover; /* Escala la imagen para cubrir toda la pantalla */
+  background-position: center; /* Centra la imagen */
+  background-attachment: fixed; /* Fija la imagen para evitar desplazamientos en scroll */
+}
+
 
   #logo-container {
     display: flex;
