@@ -193,6 +193,12 @@ body {
     text-decoration: none;
   }
 
+  .img-idom {
+    width: 16px; /* Ancho deseado */
+    height: 11px; /* Alto deseado */
+    object-fit: contain; /* Asegura que la imagen se ajuste sin perder su proporción */
+  }
+
   /*
 --Frame detalles
   */
@@ -236,6 +242,8 @@ body {
   z-index: 9998; /* Asegúrate de que esté detrás del iframe-container */
   display: none; /* Ocultar por defecto */
 }
+
+
 
 
 /* Footer Styles */

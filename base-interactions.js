@@ -385,6 +385,7 @@ const fetchData = async () => {
                       const imagenIdiom = document.createElement('img');
                       imagenIdiom.src = detalle.M.f21_imagen_Idiom.S;
                       imagenIdiom.alt = 'Idiom';
+                      imagenIdiom.classList.add('img-idom'); // Añade la clase CSS
                       detalleLi.appendChild(document.createTextNode(' | '));
                       detalleLi.appendChild(imagenIdiom);
                 }
