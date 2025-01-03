@@ -8,155 +8,6 @@ AWS.config.update({
 // Crea una instancia de DynamoDB
 var dynamodb = new AWS.DynamoDB();
 
-// Funcion para obtener la diferencia horaria entre el UTC-6 y la ubicacion del usuario
-async function obtenerDiferenciaHorariaUsuario() {
-  try {
-    const ubicacionUsuario = await obtenerUbicacionUsuario();
-    if (ubicacionUsuario) {
-      const zonaHorariaUsuario = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const diferenciaHoraria = obtenerDiferenciaHoraria("Etc/GMT+5", zonaHorariaUsuario);
-      return diferenciaHoraria;
-    } else {
-      console.warn("La geolocalizacion no esta disponible o no se ha proporcionado permiso.");
-      return 0;
-    }
-  } catch (error) {
-    console.error("Error al obtener la diferencia horaria del usuario:", error);
-    return 0;
-  }
-}
-
-// Funcion para obtener la ubicacion actual del usuario usando la API de geolocalizacion
-function obtenerUbicacionUsuario() {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const permiso = await navigator.permissions.query({ name: 'geolocation' });
-
-      if (permiso.state === 'granted') {
-        // El permiso ya esta otorgado, obtener la ubicacion
-        navigator.geolocation.getCurrentPosition(resolve, reject);
-      } else if (permiso.state === 'prompt') {
-        // El permiso aun no se ha otorgado, solicitarlo y luego obtener la ubicacion
-        navigator.geolocation.getCurrentPosition(resolve, reject);
-      } else {
-        // El permiso fue denegado o esta bloqueado, mostrar un mensaje
-        console.warn("La geolocalizacion no esta disponible o no se ha proporcionado permiso.");
-        reject("Permiso de geolocalizacion denegado");
-      }
-    } catch (error) {
-      console.error("Error al verificar el permiso de geolocalizacion:", error);
-      reject(error);
-    }
-  });
-}
-
-// Nueva función para obtener la ciudad y país de las coordenadas usando Nominatim
-async function obtenerCiudad(latitud, longitud) {
-  const url = `https://nominatim.openstreetmap.org/reverse?lat=${latitud}&lon=${longitud}&format=json&addressdetails=1`;
-
-  try {
-    const response = await fetch(url);
-    const data = await response.json();
-
-    if (data && data.address) {
-      const ciudad = data.address.city || data.address.town || data.address.village || "Desconocida"; // Obtiene la ciudad, pueblo o aldea
-      const pais = data.address.country || "Desconocido"; // Obtiene el país
-      return `${ciudad}, ${pais}`;
-    } else {
-      console.error("No se pudo obtener la dirección:", data);
-      return null;
-    }
-  } catch (error) {
-    console.error("Error al obtener la ciudad:", error);
-    return null;
-  }
-}
-
-// Nueva función para guardar la visita en DynamoDB
-async function guardarVisitaEnDynamoDB(latitud, longitud, ciudad, userAgent) {
-  const fechaVisita = new Date().toISOString(); // Formato de fecha ISO
-
-  // Determina el tipo de dispositivo a partir del User-Agent
-  const dispositivo = /Mobi|Android/i.test(userAgent) ? "Móvil" : "PC/Escritorio";
-
-  const params = {
-    TableName: 'registro_visitas',
-    Item: {
-      'fecha_visita': { S: fechaVisita },
-      'lugar_visita': { S: `Lat: ${latitud}, Long: ${longitud}` }, // Guarda la ubicación como un string
-      'ciudad': { S: ciudad || "Desconocida" }, // Guarda la ciudad
-      'user_agent': { S: dispositivo } // Guarda solo el tipo de dispositivo
-    }
-  };
-
-  try {
-    await dynamodb.putItem(params).promise();
-    // console.log("Visita guardada en DynamoDB exitosamente.");
-  } catch (error) {
-    console.error("Error al guardar la visita en DynamoDB:", error);
-  }
-}
-
-// Llama a la función para obtener la ubicación del usuario y guardar la visita
-async function registrarVisita() {
-  try {
-    const posicion = await obtenerUbicacionUsuario();
-    const latitud = posicion.coords.latitude;
-    const longitud = posicion.coords.longitude;
-    const userAgent = navigator.userAgent; // Obtener el user agent
-
-    // Obtener ciudad y país
-    const ciudad = await obtenerCiudad(latitud, longitud);
-
-    // Llamar a la función para guardar la visita
-    await guardarVisitaEnDynamoDB(latitud, longitud, ciudad, userAgent);
-  } catch (error) {
-    console.error("Error al registrar la visita:", error);
-  }
-}
-
-document.addEventListener('DOMContentLoaded', registrarVisita);
-
-// Funcion para calcular la diferencia horaria entre dos zonas horarias
-function obtenerDiferenciaHoraria(zonaHoraria1, zonaHoraria2) {
-  const fechaActual = new Date();
-  const offset1 = fechaActual.getTimezoneOffsetForZone(zonaHoraria1);
-  const offset2 = fechaActual.getTimezoneOffsetForZone(zonaHoraria2);
-  return (offset2 - offset1) / 60; // Devuelve la diferencia en horas
-}
-
-// Agrega este metodo al prototipo de Date para obtener el offset en minutos
-Date.prototype.getTimezoneOffsetForZone = function (timeZone) {
-  const utcDate = new Date(this.toLocaleString("en-US", { timeZone: "UTC" }));
-  const localDate = new Date(this.toLocaleString("en-US", { timeZone }));
-  return (localDate - utcDate) / (60 * 1000); // Devuelve el offset en minutos
-};
-
-// Funcion para ajustar la hora del evento segun la diferencia horaria
-function ajustarHoraEvento(horaEvento, diferenciaHoraria) {
-  // Parsear la hora del evento a un objeto Date
-  // Acceder al valor de la propiedad 'S' dentro del objeto horaEvento
-  const horaOriginal = new Date(`2000-01-01T${horaEvento.S}:00Z`);
-  // Sumar la diferencia horaria en minutos
-  horaOriginal.setHours(horaOriginal.getHours() + diferenciaHoraria);
-
-  // Formatear la hora ajustada a un string en formato HH:mm
-  const horaAjustada = horaOriginal.toISOString().substr(11, 5);
-
-  return horaAjustada;
-}
-
-// Calcular la diferencia de horas entre dos horas en formato HH:mm
-function calcularDiferenciaHoras(hora1, hora2) {
-  const [hora1Horas, hora1Minutos] = hora1.split(':').map(Number);
-  const [hora2Horas, hora2Minutos] = hora2.split(':').map(Number);
-
-  const diferenciaHoras = hora2Horas - hora1Horas;
-  const diferenciaMinutos = hora2Minutos - hora1Minutos;
-
-  return diferenciaHoras * 60 + diferenciaMinutos;
-}
-
 function extraerVideoIdDeYouTube(url) {
   const regex = /(?:embed\/|watch\?v=)([^?&]+)/; // Esta expresión regular busca 'embed/' o 'watch?v=' seguido de cualquier cosa hasta un '?' o '&'
   const match = url.match(regex);
@@ -174,7 +25,6 @@ const horaColombia = new Date(horaActual.getTime() + (offsetColombia + offsetLoc
 // Formatear la hora en formato HH:mm
 const horaEjecucionUsuarioCo = horaColombia.toTimeString().substring(0, 5);
 const horaEjecucionUsuario = new Date().toLocaleTimeString('en-US', { hour12: false }).substring(0, 5);
-//const horaEjecucionUsuarioCo  = new Date().toLocaleTimeString('es-CO', { hour12: false }).substring(0, 5);
 
 // Convertir horaEjecucionUsuarioCo a objeto Date
 const horaEjecucionUsuarioCoDate = new Date();
@@ -206,11 +56,8 @@ const fetchData = async () => {
       };
 
       const result = await dynamodb .scan(params).promise();
-      // const params = {TableName: 'eventos',};
-      // const result = await dynamodb.scan(params).promise();
       const eventosContainer = document.getElementById('eventos-container');
       const eventosContainerTOP = document.getElementById('eventos-container-top'); // Contenedor adicional
-      const diferenciaHorariaUsuario = await obtenerDiferenciaHorariaUsuario();
       // Limpiar el contenido actual del contenedor
       eventosContainer.innerHTML = '';
       eventosContainerTOP.innerHTML = '';
@@ -221,12 +68,9 @@ const fetchData = async () => {
 
       eventosOrdenados.forEach((doc) => {
         const data = doc;
-        // Calcular la diferencia de horas entre la hora de ejecucion del usuario y la hora ajustada del evento
-
-        //const proveedor = typeof data.f02_proveedor === 'object' ? data.f02_proveedor.S : data.f02_proveedor;
-        const horaAjustada = ajustarHoraEvento(data.f04_hora_event, diferenciaHorariaUsuario);
-        //const diferenciaHoras = calcularDiferenciaHoras(horaEjecucionUsuario, horaAjustada);
-        //if ((diferenciaHoras >= -120 && diferenciaHoras <= 15) || (typeof proveedor === 'string' && proveedor.includes("LiveTV"))) {
+        const horaOriginal = new Date(`2000-01-01T${data.f04_hora_event.S}:00Z`);
+        horaOriginal.setHours(horaOriginal.getHours());
+        const horaAjustada = horaOriginal.toISOString().substr(11, 5);
         // Crear un elemento div para cada evento
         const eventoDiv = document.createElement('div');
         eventoDiv.classList.add('evento');
@@ -247,7 +91,6 @@ const fetchData = async () => {
             banderaImg.classList.add('bandera');
             infoEventoContainer.appendChild(banderaImg);
         }
-
         const categoryEvento = document.createElement('p');
         categoryEvento.textContent = `${data.f05_event_categoria && typeof data.f05_event_categoria === 'object' && data.f05_event_categoria.hasOwnProperty('S') ? data.f05_event_categoria.S : ''} `;
         categoryEvento.classList.add('category-evento');
@@ -282,8 +125,8 @@ const fetchData = async () => {
 
           const horaEvento = document.createElement('p');
           horaEvento.textContent = `${horaAjustada} `;
-          horaEvento.style.width = 'fit-content'; // Ajusta el ancho del contenedor al contenido
-          horaEvento.style.margin = 'auto'; // Centra el contenedor horizontalmente
+          horaEvento.style.width = 'fit-content';
+          horaEvento.style.margin = 'auto';
           horaEvento.classList.add('hora-evento');
           textoImagenesContainer.appendChild(horaEvento);
 
@@ -299,9 +142,9 @@ const fetchData = async () => {
             logoLocalImg.src = data.f09_logo_Local.S;
             logoLocalImg.alt = 'Logo Local';
             logoLocalImg.classList.add('logo-local');
-            logoLocalImg.style.width = '80px'; // Ajusta el ancho según sea necesario
-            logoLocalImg.style.height = 'auto'; // Mantén la proporción original
-            logoLocalImg.style.marginRight = '10px'; // Ajusta el margen derecho según sea necesario
+            logoLocalImg.style.width = '80px';
+            logoLocalImg.style.height = 'auto';
+            logoLocalImg.style.marginRight = '10px';
             logoLocalImg.classList.add('logo-evento-local');
             textoImagenesContainer.appendChild(logoLocalImg);
             textoImagenesContainer.insertBefore(logoLocalImg, textoEventoIzquierdaElement.nextSibling);
@@ -313,9 +156,9 @@ const fetchData = async () => {
             logoVisitaImg.src = data.f11_logo_Visita.S;
             logoVisitaImg.alt = 'Logo Visita';
             logoVisitaImg.classList.add('logo-visita');
-            logoVisitaImg.style.width = '80px'; // Ajusta el ancho según sea necesario
-            logoVisitaImg.style.height = 'auto'; // Mantén la proporción original
-            logoVisitaImg.style.marginLeft = '10px'; // Ajusta el margen izquierdo según sea necesario
+            logoVisitaImg.style.width = '80px';
+            logoVisitaImg.style.height = 'auto';
+            logoVisitaImg.style.marginLeft = '10px';
             logoVisitaImg.classList.add('logo-evento-visita');
             textoImagenesContainer.appendChild(logoVisitaImg);
             textoImagenesContainer.insertBefore(logoVisitaImg, textoEventoDerechaElement);
@@ -466,7 +309,7 @@ const fetchData = async () => {
                     }
                     detalleLi.appendChild(enlaceWatch);
                 }
-                  detalleLi.classList.add('registro-detalle'); // Asegúrate de añadir esta clase
+                  detalleLi.classList.add('registro-detalle');
                   eventoDetalle.appendChild(detalleLi);
               }
             });
@@ -481,14 +324,9 @@ const fetchData = async () => {
               eventosContainer.appendChild(eventoDiv);
             }
 
-
         } else {
             console.error("data.f20_Detalles_Evento no es un objeto o es nulo.");
         }
-        // Agregar el elemento del evento al contenedor principal
-        //eventosContainer.appendChild(eventoDiv);
-
-        //}
       });
 
       // console.log("Conexion exitosa. Datos recuperados correctamente.");
@@ -519,3 +357,51 @@ searchInput.addEventListener('input', function() {
     });
 });
 
+// Llenar el selector de zonas horarias
+document.addEventListener("DOMContentLoaded", function () {
+  const timezoneSelect = document.getElementById("timezone-select");
+  const timezones = Intl.supportedValuesOf("timeZone");
+
+  timezones.forEach(zone => {
+      const option = document.createElement("option");
+      option.value = zone;
+      option.textContent = zone;
+      timezoneSelect.appendChild(option);
+  });
+
+  // Seleccionar una zona horaria predeterminada
+  timezoneSelect.value = Intl.DateTimeFormat().resolvedOptions().timeZone;
+});
+
+
+document.getElementById('timezone-select').addEventListener('change', (event) => {
+  const timezone = event.target.value;
+  ajustarHorasEventos(timezone);
+});
+
+function ajustarHorasEventos(timezone) {
+  // Recorrer todas las horas de los eventos y ajustarlas
+  const eventos = document.querySelectorAll('.hora-evento'); // Selecciona todos los elementos de hora de los eventos
+  eventos.forEach((horaEvento) => {
+      // const horaOriginal = horaEvento.getAttribute('hora-evento'); // Obtener la hora original almacenada
+      const horaOriginal = horaEvento.textContent.trim(); // Obtener el texto como hora original
+      if (!horaOriginal) return; // Si no hay hora original, continuar con el siguiente evento
+      // Convertir la hora original (en Colombia) a UTC
+      const horaColombia = new Date(`2000-01-01T${horaOriginal}:00-05:00`); // UTC-5 para Colombia
+
+      // Ajustar la hora a la zona horaria seleccionada
+      const horaAjustada = new Date(horaColombia.toLocaleString("en-US", { timeZone: timezone }));
+      const horaFinal = horaAjustada.toISOString().substr(11, 5); // Extraer HH:mm
+      // Actualizar la hora en el elemento
+      // console.log("horaOriginal" , horaOriginal)
+      // console.log("horaFinal" , horaFinal)
+      horaEvento.textContent = horaFinal;
+  });
+}
+
+// Durante la carga inicial de los datos:
+const timezoneSelect = document.getElementById('timezone-select');
+fetchData().then(() => {
+  const selectedTimezone = timezoneSelect.value; // Obtener la zona horaria seleccionada
+  ajustarHorasEventos(selectedTimezone);
+});

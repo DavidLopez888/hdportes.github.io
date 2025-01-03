@@ -20,6 +20,16 @@ body {
     display: block;
     margin: 0 auto;
   }
+
+  #timezone-container {
+    flex: 1;
+    text-align: center;
+    margin-top: 8px;
+    /* visibility: hidden;
+    height: 0;
+    overflow: hidden; */
+  }
+
   /* Contenedor de búsqueda */
   #search-container {
     flex: 1;
