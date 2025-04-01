@@ -1,12 +1,13 @@
 // Configura las credenciales de AWS
 AWS.config.update({
-  accessKeyId: 'AKIATCKAQMEJNSIO64FE',
-  secretAccessKey: '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',
-  region: 'us-east-1'
+  region: 'us-east-1',
+  credentials: new AWS.CognitoIdentityCredentials({
+    IdentityPoolId: window._config.aws.identityPoolId
+  })
 });
 
 // Crea una instancia de DynamoDB
-var dynamodb = new AWS.DynamoDB();
+const dynamodb = new AWS.DynamoDB.DocumentClient();
 
 function extraerVideoIdDeYouTube(url) {
   const regex = /(?:embed\/|watch\?v=)([^?&]+)/;
@@ -15,7 +16,7 @@ function extraerVideoIdDeYouTube(url) {
 }
 
 const zonaHoraria = Intl.DateTimeFormat().resolvedOptions().timeZone;
-console.log('Zona horaria:', zonaHoraria);
+// console.log('Zona horaria:', zonaHoraria);
 
 // Obtener la hora actual en UTC
 const horaActualUTC = new Date().toISOString().substring(0, 16); // Formato "YYYY-MM-DDTHH:mm"
@@ -32,33 +33,49 @@ const fetchData = async () => {
   try {
       const params = {
         TableName: 'eventos',
-        FilterExpression: 'attribute_exists(f03_dia_event) AND (#f03_dia_event >= :horamenos AND #f03_dia_event <= :horamas) OR contains(#proveedor, :proveedor) AND attribute_exists(f20_Detalles_Evento)',
+        // FilterExpression: 'attribute_exists(f03_dia_event) AND (#f03_dia_event >= :horamenos AND #f03_dia_event <= :horamas) OR contains(#proveedor, :proveedor) AND attribute_exists(f20_Detalles_Evento)',
+        // FilterExpression: 'attribute_exists(f03_dia_event) AND (#f03_dia_event >= :horamenos AND #f03_dia_event <= :horamas) AND attribute_exists(f20_Detalles_Evento) AND size(f20_Detalles_Evento) > 0'
+        // FilterExpression: '(attribute_exists(f03_dia_event) AND #f03_dia_event BETWEEN :horamenos AND :horamas) OR (contains(#proveedor, :proveedor))' AND attribute_exists(f20_Detalles_Evento)'
+        FilterExpression: 'attribute_exists(f20_Detalles_Evento) AND ((#f03_dia_event BETWEEN :horamenos AND :horamas) OR (contains(#proveedor, :proveedor)))',
         ExpressionAttributeNames: {
           '#f03_dia_event': 'f03_dia_event',
           '#proveedor': 'f02_proveedor'
         },
         ExpressionAttributeValues: {
-          ':horamenos': { 'S': horamenos },
-          ':horamas': { 'S': horamas },
-          ':proveedor': { 'S': 'LiveTV' }
+          ':horamenos': horamenos,
+          ':horamas': horamas,
+          ':proveedor': 'LiveTV'
         }
-      };
+        // ExpressionAttributeValues: {
+        //   ':horamenos': { 'S': horamenos },
+        //   ':horamas': { 'S': horamas },
+        //   ':proveedor': { 'S': 'LiveTV' }
+        // }
 
+      };
+      
       const result = await dynamodb.scan(params).promise();
       const eventosContainer = document.getElementById('eventos-container');
       const eventosContainerTOP = document.getElementById('eventos-container-top');
       eventosContainer.innerHTML = '';
       eventosContainerTOP.innerHTML = '';
-
-      const eventosOrdenados = result.Items ? result.Items.filter(item => {
-        return typeof item.f03_dia_event.S === 'string';
-      }).sort((a, b) => {
-        return new Date(b.f03_dia_event.S).getTime() - new Date(a.f03_dia_event.S).getTime();
-      }) : [];
+      
+      // const eventosOrdenados = result.Items ? result.Items.filter(item => {
+      //   return typeof item.f03_dia_event.S === 'string';
+      // }).sort((a, b) => {
+      //   return new Date(b.f03_dia_event.S).getTime() - new Date(a.f03_dia_event.S).getTime();
+      // }) : [];
+      
+      const eventosOrdenados = result.Items?.filter(item => 
+        typeof item.f03_dia_event === 'string'
+      ).sort((a, b) => 
+        new Date(b.f03_dia_event) - new Date(a.f03_dia_event)
+      ) || [];
 
       eventosOrdenados.forEach((doc) => {
         const data = doc;
-        const horaUTC = new Date(data.f03_dia_event.S);
+        // const horaUTC = new Date(data.f03_dia_event.S);
+        const horaUTC = new Date(data.f03_dia_event);
         const horaAjustada = horaUTC.toLocaleTimeString('en-US', { hour12: false, timeZone: zonaHoraria }).substring(0, 5);
 
         const eventoDiv = document.createElement('div');
@@ -71,16 +88,19 @@ const fetchData = async () => {
         const infoEventoContainer = document.createElement('div');
         infoEventoContainer.classList.add('info-evento-container');
 
-        if (data.f07_URL_Flag !== null && typeof data.f07_URL_Flag === 'object' && data.f07_URL_Flag.hasOwnProperty('S')) {
+        // if (data.f07_URL_Flag !== null && typeof data.f07_URL_Flag === 'object' && data.f07_URL_Flag.hasOwnProperty('S')) {
+        if (data.f07_URL_Flag) { 
             const banderaImg = document.createElement('img');
-            banderaImg.src = data.f07_URL_Flag.S;
+            // banderaImg.src = data.f07_URL_Flag.S;
+            banderaImg.src = data.f07_URL_Flag; 
             banderaImg.alt = 'Bandera';
             banderaImg.classList.add('bandera');
             infoEventoContainer.appendChild(banderaImg);
         }
-
+      
         const categoryEvento = document.createElement('p');
-        categoryEvento.textContent = `${data.f05_event_categoria && typeof data.f05_event_categoria === 'object' && data.f05_event_categoria.hasOwnProperty('S') ? data.f05_event_categoria.S : ''} `;
+        // categoryEvento.textContent = `${data.f05_event_categoria && typeof data.f05_event_categoria === 'object' && data.f05_event_categoria.hasOwnProperty('S') ? data.f05_event_categoria.S : ''} `;
+        categoryEvento.textContent = data.f05_event_categoria || '';
         categoryEvento.classList.add('category-evento');
         categoryEvento.style.marginLeft = '20px';
         infoEventoContainer.appendChild(categoryEvento);
@@ -91,9 +111,9 @@ const fetchData = async () => {
         textoImagenesContainer.classList.add('texto-imagenes-container');
 
         const textoEvento = document.createElement('p');
-        textoEvento.textContent = `${data.f06_name_event && typeof data.f06_name_event === 'object' && data.f06_name_event.hasOwnProperty('S') ? data.f06_name_event.S : ''}`;
+        // textoEvento.textContent = `${data.f06_name_event && typeof data.f06_name_event === 'object' && data.f06_name_event.hasOwnProperty('S') ? data.f06_name_event.S : ''}`;
+        textoEvento.textContent = data.f06_name_event || '';
         textoEvento.classList.add('texto-evento');
-
         const textoEventoString = textoEvento.textContent;
         const vsIndex = textoEventoString.toLowerCase().indexOf(' vs ');
         if (vsIndex !== -1) {
@@ -117,9 +137,11 @@ const fetchData = async () => {
           textoEventoDerechaElement.classList.add('texto-evento-derecha');
           textoImagenesContainer.appendChild(textoEventoDerechaElement);
 
-          if (data.f09_logo_Local !== null && typeof data.f09_logo_Local === 'object' && data.f09_logo_Local.hasOwnProperty('S')) {
+          // if (data.f09_logo_Local !== null && typeof data.f09_logo_Local === 'object' && data.f09_logo_Local.hasOwnProperty('S')) {
+          if (data.f09_logo_Local) {            
             const logoLocalImg = document.createElement('img');
-            logoLocalImg.src = data.f09_logo_Local.S;
+            // logoLocalImg.src = data.f09_logo_Local.S;
+            logoLocalImg.src = data.f09_logo_Local;
             logoLocalImg.alt = 'Logo Local';
             logoLocalImg.classList.add('logo-local');
             logoLocalImg.style.width = '80px';
@@ -130,9 +152,11 @@ const fetchData = async () => {
             textoImagenesContainer.insertBefore(logoLocalImg, textoEventoIzquierdaElement.nextSibling);
           }
 
-          if (data.f11_logo_Visita !== null && typeof data.f11_logo_Visita === 'object' && data.f11_logo_Visita.hasOwnProperty('S')) {
+          // if (data.f11_logo_Visita !== null && typeof data.f11_logo_Visita === 'object' && data.f11_logo_Visita.hasOwnProperty('S')) {
+            if (data.f11_logo_Visita) {
             const logoVisitaImg = document.createElement('img');
-            logoVisitaImg.src = data.f11_logo_Visita.S;
+            // logoVisitaImg.src = data.f11_logo_Visita.S;
+            logoVisitaImg.src = data.f11_logo_Visita;            
             logoVisitaImg.alt = 'Logo Visita';
             logoVisitaImg.classList.add('logo-visita');
             logoVisitaImg.style.width = '80px';
@@ -157,7 +181,6 @@ const fetchData = async () => {
             textoImagenesContainer.appendChild(textoEvento);
           }
         }
-
         eventoHeader.appendChild(textoImagenesContainer);
 
         eventoHeader.addEventListener('click', () => {
@@ -182,7 +205,6 @@ const fetchData = async () => {
               backgroundOverlay.style.display = 'none';
               iframe.src = '';
             }
-
             closeButton.addEventListener('click', cerrarIframe);
 
             function mostrarIframe(url) {
@@ -193,22 +215,31 @@ const fetchData = async () => {
 
             const eventoDetalle = document.createElement('ul');
             eventoDetalle.classList.add('detalle-evento');
-            data.f20_Detalles_Evento.L.forEach(detalle => {
-              if (!detalle.M.f22_opcion_Watch?.S || !detalle.M.f22_opcion_Watch.S.includes("sin_data")) {
+
+            data.f20_Detalles_Evento.forEach(detalle => {
+              // if (!detalle.M.f22_opcion_Watch?.S || !detalle.M.f22_opcion_Watch.S.includes("sin_data")) {
+              if (!detalle.f22_opcion_Watch?.includes("sin_data")) {
                 const detalleLi = document.createElement('li');
-                if (detalle.M.f21_imagen_Idiom?.S) {
+                // if (detalle.M.f21_imagen_Idiom?.S) {
+                  if (detalle.f21_imagen_Idiom) {
                       const imagenIdiom = document.createElement('img');
-                      imagenIdiom.src = detalle.M.f21_imagen_Idiom.S;
+                      // imagenIdiom.src = detalle.M.f21_imagen_Idiom.S;
+                      imagenIdiom.src = detalle.f21_imagen_Idiom
                       imagenIdiom.alt = 'Idiom';
                       imagenIdiom.classList.add('img-idom');
                       detalleLi.appendChild(document.createTextNode(' | '));
                       detalleLi.appendChild(imagenIdiom);
                 }
-                if (detalle.M.f23_text_Idiom?.S && detalle.M.f24_url_Final?.S) {
+
+                // if (detalle.M.f23_text_Idiom?.S && detalle.M.f24_url_Final?.S) {
+                if (detalle.f23_text_Idiom && detalle.f24_url_Final) {
                   const enlace = document.createElement('a');
-                  enlace.href = detalle.M.f24_url_Final.S;
-                  enlace.textContent = detalle.M.f23_text_Idiom.S;
+                  // enlace.href = detalle.M.f24_url_Final.S;
+                  enlace.href = detalle.f24_url_Final;
+                  // enlace.textContent = detalle.M.f23_text_Idiom.S;
+                  enlace.textContent = detalle.f23_text_Idiom;
                   detalleLi.appendChild(document.createTextNode(' | '));
+
                   if (enlace.href.includes("atptour")) {
                       enlace.target = "_blank";
                   }
@@ -238,10 +269,13 @@ const fetchData = async () => {
                   detalleLi.appendChild(enlace);
                 }
 
-                if (detalle.M.f22_opcion_Watch?.S && detalle.M.f24_url_Final?.S) {
+                // if (detalle.M.f22_opcion_Watch?.S && detalle.M.f24_url_Final?.S) {
+                if (detalle.f22_opcion_Watch && detalle.f24_url_Final) {
                     const enlaceWatch = document.createElement('a');
-                    enlaceWatch.href = detalle.M.f24_url_Final.S;
-                    enlaceWatch.textContent = detalle.M.f22_opcion_Watch.S;
+                    // enlaceWatch.href = detalle.M.f24_url_Final.S;
+                    enlaceWatch.href = detalle.f24_url_Final;
+                    // enlaceWatch.textContent = detalle.M.f22_opcion_Watch.S;
+                    enlaceWatch.textContent = detalle.f22_opcion_Watch;
                     detalleLi.appendChild(document.createTextNode(' | '));
                     if (enlaceWatch.href.includes("atptour") || enlaceWatch.href.includes("acestream")) {
                         enlaceWatch.target = "_blank";
@@ -278,10 +312,11 @@ const fetchData = async () => {
                   eventoDetalle.appendChild(detalleLi);
               }
             });
+
             detalleEventoContainer.appendChild(eventoDetalle);
             eventoDiv.appendChild(detalleEventoContainer);
 
-            const numDetalles = data.f20_Detalles_Evento.L.length;
+            const numDetalles = data.f20_Detalles_Evento.length;
             if (numDetalles > 20) {
               eventosContainerTOP.appendChild(eventoDiv);
             } else {
