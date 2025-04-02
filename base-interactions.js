@@ -15,56 +15,61 @@ function extraerVideoIdDeYouTube(url) {
   return match ? match[1] : null;
 }
 
-const zonaHoraria = Intl.DateTimeFormat().resolvedOptions().timeZone;
-// console.log('Zona horaria:', zonaHoraria);
+// Obtener la zona horaria del usuario
+let userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-// Obtener la hora actual en UTC
-const horaActualUTC = new Date().toISOString().substring(0, 16); // Formato "YYYY-MM-DDTHH:mm"
+// Función para formatear hora local
+function formatLocalTime(utcDateString, timezone) {
+  // Asegurarnos que la fecha se interprete como UTC
+  const date = new Date(utcDateString + 'Z'); // Agrega 'Z' para forzar UTC
+  
+  // Opciones para el formato
+  const options = {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: timezone
+  };
+  
+  // Formatear con la zona horaria especificada
+  return date.toLocaleTimeString('en-US', options);
+}
 
-// Calcular hora menos 120 minutos
-const horamenosDate = new Date(new Date().getTime() - 120 * 60000).toISOString().substring(0, 16);
-const horamenos = horamenosDate;
+// Función para obtener el rango de fechas en UTC
+function getTimeRange() {
+  const now = new Date();
+  const horamenosDate = new Date(now.getTime() - 120 * 60000);
+  const horamasDate = new Date(now.getTime() + 25 * 60000);
+  return {
+    horamenos: horamenosDate.toISOString().substring(0, 16),
+    horamas: horamasDate.toISOString().substring(0, 16)
+  };
+}
 
-// Calcular hora mas 15 minutos
-const horamasDate = new Date(new Date().getTime() + 25 * 60000).toISOString().substring(0, 16);
-const horamas = horamasDate;
 
-const fetchData = async () => {
+const fetchData = async (timezone = userTimezone) => {  
   try {
-      const params = {
-        TableName: 'eventos',
-        // FilterExpression: 'attribute_exists(f03_dia_event) AND (#f03_dia_event >= :horamenos AND #f03_dia_event <= :horamas) OR contains(#proveedor, :proveedor) AND attribute_exists(f20_Detalles_Evento)',
-        // FilterExpression: 'attribute_exists(f03_dia_event) AND (#f03_dia_event >= :horamenos AND #f03_dia_event <= :horamas) AND attribute_exists(f20_Detalles_Evento) AND size(f20_Detalles_Evento) > 0'
-        // FilterExpression: '(attribute_exists(f03_dia_event) AND #f03_dia_event BETWEEN :horamenos AND :horamas) OR (contains(#proveedor, :proveedor))' AND attribute_exists(f20_Detalles_Evento)'
-        FilterExpression: 'attribute_exists(f20_Detalles_Evento) AND ((#f03_dia_event BETWEEN :horamenos AND :horamas) OR (contains(#proveedor, :proveedor)))',
-        ExpressionAttributeNames: {
-          '#f03_dia_event': 'f03_dia_event',
-          '#proveedor': 'f02_proveedor'
-        },
-        ExpressionAttributeValues: {
-          ':horamenos': horamenos,
-          ':horamas': horamas,
-          ':proveedor': 'LiveTV'
-        }
-        // ExpressionAttributeValues: {
-        //   ':horamenos': { 'S': horamenos },
-        //   ':horamas': { 'S': horamas },
-        //   ':proveedor': { 'S': 'LiveTV' }
-        // }
-
-      };
-      
-      const result = await dynamodb.scan(params).promise();
+    const { horamenos, horamas } = getTimeRange();
+    
+    const params = {
+      TableName: 'eventos',
+      FilterExpression: 'attribute_exists(f20_Detalles_Evento) AND ((#f03_dia_event BETWEEN :horamenos AND :horamas) OR (contains(#proveedor, :proveedor)))',      
+      ExpressionAttributeNames: {
+        '#f03_dia_event': 'f03_dia_event',
+        '#proveedor': 'f02_proveedor' 
+      },
+      ExpressionAttributeValues: {
+        ':horamenos': horamenos,
+        ':horamas': horamas,
+        ':proveedor': 'LiveTV'
+      }
+    };   
+    
+      const result = await dynamodb.scan(params).promise(); 
       const eventosContainer = document.getElementById('eventos-container');
       const eventosContainerTOP = document.getElementById('eventos-container-top');
       eventosContainer.innerHTML = '';
       eventosContainerTOP.innerHTML = '';
-      
-      // const eventosOrdenados = result.Items ? result.Items.filter(item => {
-      //   return typeof item.f03_dia_event.S === 'string';
-      // }).sort((a, b) => {
-      //   return new Date(b.f03_dia_event.S).getTime() - new Date(a.f03_dia_event.S).getTime();
-      // }) : [];
       
       const eventosOrdenados = result.Items?.filter(item => 
         typeof item.f03_dia_event === 'string'
@@ -74,9 +79,15 @@ const fetchData = async () => {
 
       eventosOrdenados.forEach((doc) => {
         const data = doc;
-        // const horaUTC = new Date(data.f03_dia_event.S);
-        const horaUTC = new Date(data.f03_dia_event);
-        const horaAjustada = horaUTC.toLocaleTimeString('en-US', { hour12: false, timeZone: zonaHoraria }).substring(0, 5);
+        const horaUTC = data.f03_dia_event;
+        const horaAjustada = formatLocalTime(horaUTC, timezone);
+        
+        // console.log('Evento:', {
+        //   nombre: data.f06_name_event,
+        //   horaUTC: horaUTC,
+        //   horaLocal: horaAjustada,
+        //   ahoraUTC: new Date().toISOString()
+        // });
 
         const eventoDiv = document.createElement('div');
         eventoDiv.classList.add('evento');
@@ -127,6 +138,7 @@ const fetchData = async () => {
 
           const horaEvento = document.createElement('p');
           horaEvento.textContent = `${horaAjustada} `;
+          horaEvento.dataset.utc = horaUTC; 
           horaEvento.style.width = 'fit-content';
           horaEvento.style.margin = 'auto';
           horaEvento.classList.add('hora-evento');
@@ -169,6 +181,7 @@ const fetchData = async () => {
         } else {
           const horaEvento = document.createElement('p');
           horaEvento.textContent = `${horaAjustada} `;
+          horaEvento.dataset.utc = horaUTC;
           horaEvento.style.width = 'fit-content';
           horaEvento.style.margin = 'auto';
           horaEvento.classList.add('hora-evento');
@@ -333,59 +346,106 @@ const fetchData = async () => {
   }
 };
 
-document.addEventListener('DOMContentLoaded', fetchData);
-
-const searchInput = document.getElementById('search-input');
-searchInput.addEventListener('input', function() {
-    const searchTerm = this.value.toLowerCase();
-    const eventos = document.querySelectorAll('.evento');
-
-    eventos.forEach(evento => {
-        const textoEvento = evento.textContent.toLowerCase();
-        if (textoEvento.includes(searchTerm)) {
-            evento.style.display = 'block';
-            evento.querySelectorAll('.detalle_evento').forEach(detalle => {
-                detalle.style.display = 'block';
-            });
-        } else {
-            evento.style.display = 'none';
-        }
-    });
-});
-
-document.addEventListener("DOMContentLoaded", function () {
-  const timezoneSelect = document.getElementById("timezone-select");
-  const timezones = Intl.supportedValuesOf("timeZone");
-
-  timezones.forEach(zone => {
-      const option = document.createElement("option");
-      option.value = zone;
-      option.textContent = zone;
-      timezoneSelect.appendChild(option);
-  });
-
-  timezoneSelect.value = Intl.DateTimeFormat().resolvedOptions().timeZone;
-});
-
-document.getElementById('timezone-select').addEventListener('change', (event) => {
-  const timezone = event.target.value;
-  ajustarHorasEventos(timezone);
-});
-
+// Función para ajustar horas
 function ajustarHorasEventos(timezone) {
-  const eventos = document.querySelectorAll('.hora-evento');
-  eventos.forEach((horaEvento) => {
-      const horaOriginal = horaEvento.textContent.trim();
-      if (!horaOriginal) return;
-      const horaUTC = new Date(`2000-01-01T${horaOriginal}:00Z`);
-      const horaAjustada = new Date(horaUTC.toLocaleString("en-US", { timeZone: timezone }));
-      const horaFinal = horaAjustada.toISOString().substr(11, 5);
-      horaEvento.textContent = horaFinal;
+  const eventos = document.querySelectorAll('.evento');
+  
+  eventos.forEach((evento) => {
+    const horaElement = evento.querySelector('.hora-evento');
+    if (!horaElement || !horaElement.dataset.utc) {
+      console.warn('Elemento de hora no encontrado o sin data-utc');
+      return;
+    }
+    
+    const horaAjustada = formatLocalTime(horaElement.dataset.utc, timezone);
+    horaElement.textContent = horaAjustada;
   });
 }
 
-const timezoneSelect = document.getElementById('timezone-select');
-fetchData().then(() => {
-  const selectedTimezone = timezoneSelect.value;
-  ajustarHorasEventos(selectedTimezone);
+// Inicialización
+document.addEventListener('DOMContentLoaded', () => {
+  // Configurar selector de zonas horarias
+  const timezoneSelect = document.getElementById("timezone-select");
+  const timezones = Intl.supportedValuesOf("timeZone");
+  
+  timezones.forEach(zone => {
+    const option = document.createElement("option");
+    option.value = zone;
+    option.textContent = zone;
+    timezoneSelect.appendChild(option);
+  });
+  
+  timezoneSelect.value = userTimezone;
+  
+  // Cargar datos iniciales
+  fetchData().then(() => {
+    ajustarHorasEventos(userTimezone);
+  });
+  
+  // Manejar cambio de zona horaria
+  timezoneSelect.addEventListener('change', (event) => {
+    userTimezone = event.target.value;    
+    // Primero ajusta las horas de los eventos existentes
+    ajustarHorasEventos(userTimezone);
+    
+    // Luego recarga los datos para el nuevo rango horario
+    fetchData(userTimezone);
+  });
 });
+
+// Búsqueda
+const searchInput = document.getElementById('search-input');
+searchInput.addEventListener('input', function() {
+  const searchTerm = this.value.toLowerCase();
+  const eventos = document.querySelectorAll('.evento');
+
+  eventos.forEach(evento => {
+    const textoEvento = evento.textContent.toLowerCase();
+    evento.style.display = textoEvento.includes(searchTerm) ? 'block' : 'none';
+  });
+});
+
+// const searchInput = document.getElementById('search-input');
+// searchInput.addEventListener('input', function() {
+//     const searchTerm = this.value.toLowerCase();
+//     const eventos = document.querySelectorAll('.evento');
+
+//     eventos.forEach(evento => {
+//         const textoEvento = evento.textContent.toLowerCase();
+//         if (textoEvento.includes(searchTerm)) {
+//             evento.style.display = 'block';
+//             evento.querySelectorAll('.detalle_evento').forEach(detalle => {
+//                 detalle.style.display = 'block';
+//             });
+//         } else {
+//             evento.style.display = 'none';
+//         }
+//     });
+// });
+
+// document.addEventListener("DOMContentLoaded", function () {
+//   const timezoneSelect = document.getElementById("timezone-select");
+//   const timezones = Intl.supportedValuesOf("timeZone");
+
+//   timezones.forEach(zone => {
+//       const option = document.createElement("option");
+//       option.value = zone;
+//       option.textContent = zone;
+//       timezoneSelect.appendChild(option);
+//   });
+
+//   timezoneSelect.value = Intl.DateTimeFormat().resolvedOptions().timeZone;
+// });
+
+// document.getElementById('timezone-select').addEventListener('change', (event) => {
+//   const timezone = event.target.value;
+//   ajustarHorasEventos(timezone);
+// });
+
+
+
+// const timezoneSelect = document.getElementById('timezone-select');
+// fetchData().then(() => {
+//   const selectedTimezone = timezoneSelect.value;
+//   ajustarHorasEventos(selectedTimezone);
+// });
