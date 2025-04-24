@@ -204,6 +204,9 @@ const fetchData = async (timezone = userTimezone) => {
         });
 
         if (typeof data.f20_Detalles_Evento === 'object' && data.f20_Detalles_Evento !== null) {
+            data.f20_Detalles_Evento.sort((a, b) => {
+              return (a._orden_proveedor || 99) - (b._orden_proveedor || 99);
+            });          
             const detalleEventoContainer = document.createElement('div');
             detalleEventoContainer.classList.add('detalle-evento-container');
             detalleEventoContainer.style.display = 'none';
@@ -230,26 +233,23 @@ const fetchData = async (timezone = userTimezone) => {
             eventoDetalle.classList.add('detalle-evento');
 
             data.f20_Detalles_Evento.forEach(detalle => {
-              // if (!detalle.M.f22_opcion_Watch?.S || !detalle.M.f22_opcion_Watch.S.includes("sin_data")) {
               if (!detalle.f22_opcion_Watch?.includes("sin_data")) {
-                const detalleLi = document.createElement('li');
-                // if (detalle.M.f21_imagen_Idiom?.S) {
+                const detalleLi = document.createElement('li');                
                   if (detalle.f21_imagen_Idiom) {
                       const imagenIdiom = document.createElement('img');
-                      // imagenIdiom.src = detalle.M.f21_imagen_Idiom.S;
                       imagenIdiom.src = detalle.f21_imagen_Idiom
+                      // imagenIdiom.src = detalle.f22_opcion_Watch === "YouTube"
+                      // ? 'images/YouTube.png' 
+                      // : detalle.f21_imagen_Idiom;
                       imagenIdiom.alt = 'Idiom';
                       imagenIdiom.classList.add('img-idom');
                       detalleLi.appendChild(document.createTextNode(' | '));
                       detalleLi.appendChild(imagenIdiom);
                 }
 
-                // if (detalle.M.f23_text_Idiom?.S && detalle.M.f24_url_Final?.S) {
                 if (detalle.f23_text_Idiom && detalle.f24_url_Final) {
                   const enlace = document.createElement('a');
-                  // enlace.href = detalle.M.f24_url_Final.S;
                   enlace.href = detalle.f24_url_Final;
-                  // enlace.textContent = detalle.M.f23_text_Idiom.S;
                   enlace.textContent = detalle.f23_text_Idiom;
                   detalleLi.appendChild(document.createTextNode(' | '));
 
