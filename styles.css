@@ -204,8 +204,8 @@ body {
   }
 
   .img-idom {
-    width: 16px; /* Ancho deseado */
-    height: 11px; /* Alto deseado */
+    width: 21px; /* Ancho deseado */
+    height: 16px; /* Alto deseado */
     object-fit: contain; /* Asegura que la imagen se ajuste sin perder su proporción */
   }
 

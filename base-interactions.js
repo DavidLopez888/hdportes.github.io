@@ -22,7 +22,7 @@ let userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 function formatLocalTime(utcDateString, timezone) {
   // Asegurarnos que la fecha se interprete como UTC
   const date = new Date(utcDateString + 'Z'); // Agrega 'Z' para forzar UTC
-  
+
   // Opciones para el formato
   const options = {
     hour: '2-digit',
@@ -30,7 +30,7 @@ function formatLocalTime(utcDateString, timezone) {
     hour12: false,
     timeZone: timezone
   };
-  
+
   // Formatear con la zona horaria especificada
   return date.toLocaleTimeString('en-US', options);
 }
@@ -47,33 +47,33 @@ function getTimeRange() {
 }
 
 
-const fetchData = async (timezone = userTimezone) => {  
+const fetchData = async (timezone = userTimezone) => {
   try {
     const { horamenos, horamas } = getTimeRange();
-    
+
     const params = {
       TableName: 'eventos',
-      FilterExpression: 'attribute_exists(f20_Detalles_Evento) AND ((#f03_dia_event BETWEEN :horamenos AND :horamas) OR (contains(#proveedor, :proveedor)))',      
+      FilterExpression: 'attribute_exists(f20_Detalles_Evento) AND ((#f03_dia_event BETWEEN :horamenos AND :horamas) OR (contains(#proveedor, :proveedor)))',
       ExpressionAttributeNames: {
         '#f03_dia_event': 'f03_dia_event',
-        '#proveedor': 'f02_proveedor' 
+        '#proveedor': 'f02_proveedor'
       },
       ExpressionAttributeValues: {
         ':horamenos': horamenos,
         ':horamas': horamas,
         ':proveedor': 'LiveTV'
       }
-    };   
-    
-      const result = await dynamodb.scan(params).promise(); 
+    };
+
+      const result = await dynamodb.scan(params).promise();
       const eventosContainer = document.getElementById('eventos-container');
       const eventosContainerTOP = document.getElementById('eventos-container-top');
       eventosContainer.innerHTML = '';
       eventosContainerTOP.innerHTML = '';
-      
-      const eventosOrdenados = result.Items?.filter(item => 
+
+      const eventosOrdenados = result.Items?.filter(item =>
         typeof item.f03_dia_event === 'string'
-      ).sort((a, b) => 
+      ).sort((a, b) =>
         new Date(b.f03_dia_event) - new Date(a.f03_dia_event)
       ) || [];
 
@@ -81,7 +81,7 @@ const fetchData = async (timezone = userTimezone) => {
         const data = doc;
         const horaUTC = data.f03_dia_event;
         const horaAjustada = formatLocalTime(horaUTC, timezone);
-        
+
         // console.log('Evento:', {
         //   nombre: data.f06_name_event,
         //   horaUTC: horaUTC,
@@ -100,15 +100,15 @@ const fetchData = async (timezone = userTimezone) => {
         infoEventoContainer.classList.add('info-evento-container');
 
         // if (data.f07_URL_Flag !== null && typeof data.f07_URL_Flag === 'object' && data.f07_URL_Flag.hasOwnProperty('S')) {
-        if (data.f07_URL_Flag) { 
+        if (data.f07_URL_Flag) {
             const banderaImg = document.createElement('img');
             // banderaImg.src = data.f07_URL_Flag.S;
-            banderaImg.src = data.f07_URL_Flag; 
+            banderaImg.src = data.f07_URL_Flag;
             banderaImg.alt = 'Bandera';
             banderaImg.classList.add('bandera');
             infoEventoContainer.appendChild(banderaImg);
         }
-      
+
         const categoryEvento = document.createElement('p');
         // categoryEvento.textContent = `${data.f05_event_categoria && typeof data.f05_event_categoria === 'object' && data.f05_event_categoria.hasOwnProperty('S') ? data.f05_event_categoria.S : ''} `;
         categoryEvento.textContent = data.f05_event_categoria || '';
@@ -138,7 +138,7 @@ const fetchData = async (timezone = userTimezone) => {
 
           const horaEvento = document.createElement('p');
           horaEvento.textContent = `${horaAjustada} `;
-          horaEvento.dataset.utc = horaUTC; 
+          horaEvento.dataset.utc = horaUTC;
           horaEvento.style.width = 'fit-content';
           horaEvento.style.margin = 'auto';
           horaEvento.classList.add('hora-evento');
@@ -150,7 +150,7 @@ const fetchData = async (timezone = userTimezone) => {
           textoImagenesContainer.appendChild(textoEventoDerechaElement);
 
           // if (data.f09_logo_Local !== null && typeof data.f09_logo_Local === 'object' && data.f09_logo_Local.hasOwnProperty('S')) {
-          if (data.f09_logo_Local) {            
+          if (data.f09_logo_Local) {
             const logoLocalImg = document.createElement('img');
             // logoLocalImg.src = data.f09_logo_Local.S;
             logoLocalImg.src = data.f09_logo_Local;
@@ -168,7 +168,7 @@ const fetchData = async (timezone = userTimezone) => {
             if (data.f11_logo_Visita) {
             const logoVisitaImg = document.createElement('img');
             // logoVisitaImg.src = data.f11_logo_Visita.S;
-            logoVisitaImg.src = data.f11_logo_Visita;            
+            logoVisitaImg.src = data.f11_logo_Visita;
             logoVisitaImg.alt = 'Logo Visita';
             logoVisitaImg.classList.add('logo-visita');
             logoVisitaImg.style.width = '80px';
@@ -206,7 +206,7 @@ const fetchData = async (timezone = userTimezone) => {
         if (typeof data.f20_Detalles_Evento === 'object' && data.f20_Detalles_Evento !== null) {
             data.f20_Detalles_Evento.sort((a, b) => {
               return (a._orden_proveedor || 99) - (b._orden_proveedor || 99);
-            });          
+            });
             const detalleEventoContainer = document.createElement('div');
             detalleEventoContainer.classList.add('detalle-evento-container');
             detalleEventoContainer.style.display = 'none';
@@ -234,18 +234,39 @@ const fetchData = async (timezone = userTimezone) => {
 
             data.f20_Detalles_Evento.forEach(detalle => {
               if (!detalle.f22_opcion_Watch?.includes("sin_data")) {
-                const detalleLi = document.createElement('li');                
+                const detalleLi = document.createElement('li');
+                const imagenIdiom = document.createElement('img');
+
+                if (detalle.f25_proveedor.includes("DLHD")) {
+                  imagenIdiom.src = 'images/HD.png';
+                  imagenIdiom.alt = 'Idiom';
+                  imagenIdiom.classList.add('img-idom');
+                  detalleLi.appendChild(document.createTextNode(' | '));
+                  detalleLi.appendChild(imagenIdiom);
+                } else {
                   if (detalle.f21_imagen_Idiom) {
-                      const imagenIdiom = document.createElement('img');
-                      imagenIdiom.src = detalle.f21_imagen_Idiom
-                      // imagenIdiom.src = detalle.f22_opcion_Watch === "YouTube"
-                      // ? 'images/YouTube.png' 
-                      // : detalle.f21_imagen_Idiom;
-                      imagenIdiom.alt = 'Idiom';
-                      imagenIdiom.classList.add('img-idom');
-                      detalleLi.appendChild(document.createTextNode(' | '));
-                      detalleLi.appendChild(imagenIdiom);
+                    imagenIdiom.src = detalle.f21_imagen_Idiom;    
+                    imagenIdiom.alt = 'Idiom';
+                    imagenIdiom.classList.add('img-idom');
+                    detalleLi.appendChild(document.createTextNode(' | '));
+                    detalleLi.appendChild(imagenIdiom);
+                  }                                    
                 }
+
+                // if (detalle.f21_imagen_Idiom) {
+
+                //     // imagenIdiom.src = detalle.f21_imagen_Idiom
+                //     // imagenIdiom.src = detalle.f25_proveedor === "1 DLHD"
+                //     //   ? 'images/HD.png'
+                //     //   : detalle.f21_imagen_Idiom;                 
+
+                //     imagenIdiom.alt = 'Idiom';
+                //     imagenIdiom.classList.add('img-idom');
+                //     detalleLi.appendChild(document.createTextNode(' | '));
+                //     detalleLi.appendChild(imagenIdiom);
+                // }
+
+
 
                 if (detalle.f23_text_Idiom && detalle.f24_url_Final) {
                   const enlace = document.createElement('a');
@@ -349,14 +370,14 @@ const fetchData = async (timezone = userTimezone) => {
 // Función para ajustar horas
 function ajustarHorasEventos(timezone) {
   const eventos = document.querySelectorAll('.evento');
-  
+
   eventos.forEach((evento) => {
     const horaElement = evento.querySelector('.hora-evento');
     if (!horaElement || !horaElement.dataset.utc) {
       console.warn('Elemento de hora no encontrado o sin data-utc');
       return;
     }
-    
+
     const horaAjustada = formatLocalTime(horaElement.dataset.utc, timezone);
     horaElement.textContent = horaAjustada;
   });
@@ -367,27 +388,27 @@ document.addEventListener('DOMContentLoaded', () => {
   // Configurar selector de zonas horarias
   const timezoneSelect = document.getElementById("timezone-select");
   const timezones = Intl.supportedValuesOf("timeZone");
-  
+
   timezones.forEach(zone => {
     const option = document.createElement("option");
     option.value = zone;
     option.textContent = zone;
     timezoneSelect.appendChild(option);
   });
-  
+
   timezoneSelect.value = userTimezone;
-  
+
   // Cargar datos iniciales
   fetchData().then(() => {
     ajustarHorasEventos(userTimezone);
   });
-  
+
   // Manejar cambio de zona horaria
   timezoneSelect.addEventListener('change', (event) => {
-    userTimezone = event.target.value;    
+    userTimezone = event.target.value;
     // Primero ajusta las horas de los eventos existentes
     ajustarHorasEventos(userTimezone);
-    
+
     // Luego recarga los datos para el nuevo rango horario
     fetchData(userTimezone);
   });
