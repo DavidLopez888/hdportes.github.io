@@ -1,4 +1,4 @@
-// Configura las credenciales de AWS
+// Configurar las credenciales de AWS
 AWS.config.update({
   region: 'us-east-1',
   credentials: new AWS.CognitoIdentityCredentials({
@@ -6,7 +6,7 @@ AWS.config.update({
   })
 });
 
-// Crea una instancia de DynamoDB
+// Crear una instancia de DynamoDB
 const dynamodb = new AWS.DynamoDB.DocumentClient();
 
 function extraerVideoIdDeYouTube(url) {
@@ -82,13 +82,6 @@ const fetchData = async (timezone = userTimezone) => {
         const horaUTC = data.f03_dia_event;
         const horaAjustada = formatLocalTime(horaUTC, timezone);
 
-        // console.log('Evento:', {
-        //   nombre: data.f06_name_event,
-        //   horaUTC: horaUTC,
-        //   horaLocal: horaAjustada,
-        //   ahoraUTC: new Date().toISOString()
-        // });
-
         const eventoDiv = document.createElement('div');
         eventoDiv.classList.add('evento');
 
@@ -99,18 +92,15 @@ const fetchData = async (timezone = userTimezone) => {
         const infoEventoContainer = document.createElement('div');
         infoEventoContainer.classList.add('info-evento-container');
 
-        // if (data.f07_URL_Flag !== null && typeof data.f07_URL_Flag === 'object' && data.f07_URL_Flag.hasOwnProperty('S')) {
         if (data.f07_URL_Flag) {
-            const banderaImg = document.createElement('img');
-            // banderaImg.src = data.f07_URL_Flag.S;
-            banderaImg.src = data.f07_URL_Flag;
-            banderaImg.alt = 'Bandera';
-            banderaImg.classList.add('bandera');
-            infoEventoContainer.appendChild(banderaImg);
+          const banderaImg = document.createElement('img');
+          banderaImg.src = data.f07_URL_Flag;
+          banderaImg.alt = 'Bandera';
+          banderaImg.classList.add('bandera');
+          infoEventoContainer.appendChild(banderaImg);
         }
 
         const categoryEvento = document.createElement('p');
-        // categoryEvento.textContent = `${data.f05_event_categoria && typeof data.f05_event_categoria === 'object' && data.f05_event_categoria.hasOwnProperty('S') ? data.f05_event_categoria.S : ''} `;
         categoryEvento.textContent = data.f05_event_categoria || '';
         categoryEvento.classList.add('category-evento');
         categoryEvento.style.marginLeft = '20px';
@@ -122,11 +112,11 @@ const fetchData = async (timezone = userTimezone) => {
         textoImagenesContainer.classList.add('texto-imagenes-container');
 
         const textoEvento = document.createElement('p');
-        // textoEvento.textContent = `${data.f06_name_event && typeof data.f06_name_event === 'object' && data.f06_name_event.hasOwnProperty('S') ? data.f06_name_event.S : ''}`;
         textoEvento.textContent = data.f06_name_event || '';
         textoEvento.classList.add('texto-evento');
         const textoEventoString = textoEvento.textContent;
         const vsIndex = textoEventoString.toLowerCase().indexOf(' vs ');
+        
         if (vsIndex !== -1) {
           const textoEventoIzquierda_vs = textoEventoString.slice(0, vsIndex).trim();
           const textoEventoDerecha_vs = textoEventoString.slice(vsIndex + 3).trim();
@@ -149,10 +139,8 @@ const fetchData = async (timezone = userTimezone) => {
           textoEventoDerechaElement.classList.add('texto-evento-derecha');
           textoImagenesContainer.appendChild(textoEventoDerechaElement);
 
-          // if (data.f09_logo_Local !== null && typeof data.f09_logo_Local === 'object' && data.f09_logo_Local.hasOwnProperty('S')) {
           if (data.f09_logo_Local) {
             const logoLocalImg = document.createElement('img');
-            // logoLocalImg.src = data.f09_logo_Local.S;
             logoLocalImg.src = data.f09_logo_Local;
             logoLocalImg.alt = 'Logo Local';
             logoLocalImg.classList.add('logo-local');
@@ -164,10 +152,8 @@ const fetchData = async (timezone = userTimezone) => {
             textoImagenesContainer.insertBefore(logoLocalImg, textoEventoIzquierdaElement.nextSibling);
           }
 
-          // if (data.f11_logo_Visita !== null && typeof data.f11_logo_Visita === 'object' && data.f11_logo_Visita.hasOwnProperty('S')) {
-            if (data.f11_logo_Visita) {
+          if (data.f11_logo_Visita) {
             const logoVisitaImg = document.createElement('img');
-            // logoVisitaImg.src = data.f11_logo_Visita.S;
             logoVisitaImg.src = data.f11_logo_Visita;
             logoVisitaImg.alt = 'Logo Visita';
             logoVisitaImg.classList.add('logo-visita');
@@ -199,166 +185,240 @@ const fetchData = async (timezone = userTimezone) => {
         eventoHeader.addEventListener('click', () => {
           const detalle = eventoDiv.querySelector('.detalle-evento-container');
           if (detalle) {
-              detalle.style.display = detalle.style.display === 'none' ? 'block' : 'none';
+            detalle.style.display = detalle.style.display === 'none' ? 'block' : 'none';
           }
         });
 
         if (typeof data.f20_Detalles_Evento === 'object' && data.f20_Detalles_Evento !== null) {
-            data.f20_Detalles_Evento.sort((a, b) => {
-              return (a._orden_proveedor || 99) - (b._orden_proveedor || 99);
-            });
-            const detalleEventoContainer = document.createElement('div');
-            detalleEventoContainer.classList.add('detalle-evento-container');
-            detalleEventoContainer.style.display = 'none';
+          data.f20_Detalles_Evento.sort((a, b) => {
+            return (a._orden_proveedor || 99) - (b._orden_proveedor || 99);
+          });
+          
+          const detalleEventoContainer = document.createElement('div');
+          detalleEventoContainer.classList.add('detalle-evento-container');
+          detalleEventoContainer.style.display = 'none';
 
-            const closeButton = document.getElementById('close-button');
-            const backgroundOverlay = document.getElementById('background-overlay');
-            const iframeContainer = document.getElementById('iframe-container');
-            const iframe = document.getElementById('detalle-iframe');
+          const closeButton = document.getElementById('close-button');
+          const backgroundOverlay = document.getElementById('background-overlay');
+          const iframeContainer = document.getElementById('iframe-container');
+          const iframe = document.getElementById('detalle-iframe');
 
-            function cerrarIframe() {
-              iframeContainer.style.display = 'none';
-              backgroundOverlay.style.display = 'none';
-              iframe.src = '';
-            }
-            closeButton.addEventListener('click', cerrarIframe);
+          function cerrarIframe() {
+            iframeContainer.style.display = 'none';
+            backgroundOverlay.style.display = 'none';
+            iframe.src = '';
+          }
+          closeButton.addEventListener('click', cerrarIframe);
 
-            function mostrarIframe(url) {
-              iframe.src = url;
-              iframeContainer.style.display = 'block';
-              backgroundOverlay.style.display = 'block';
-            }
+          function mostrarIframe(url) {
+            iframe.src = url;
+            iframeContainer.style.display = 'block';
+            backgroundOverlay.style.display = 'block';
+          }
 
-            const eventoDetalle = document.createElement('ul');
-            eventoDetalle.classList.add('detalle-evento');
+          const eventoDetalle = document.createElement('ul');
+          eventoDetalle.classList.add('detalle-evento');
 
-            data.f20_Detalles_Evento.forEach(detalle => {
-              if (!detalle.f22_opcion_Watch?.includes("sin_data")) {
-                const detalleLi = document.createElement('li');
-                const imagenIdiom = document.createElement('img');
+          // --- INICIO DE LA LÓGICA DE AGRUPACIÓN MEJORADA ---
+          const opcionesAgrupadas = {};
+          const opcionesSueltas = [];
 
-                if (detalle.f25_proveedor.includes("DLHD")) {
-                  imagenIdiom.src = 'images/HD.png';
-                  imagenIdiom.alt = 'Idiom';
-                  imagenIdiom.classList.add('img-idom');
-                  detalleLi.appendChild(document.createTextNode(' | '));
-                  detalleLi.appendChild(imagenIdiom);
-                } else {
-                  if (detalle.f21_imagen_Idiom) {
-                    imagenIdiom.src = detalle.f21_imagen_Idiom;    
-                    imagenIdiom.alt = 'Idiom';
-                    imagenIdiom.classList.add('img-idom');
-                    detalleLi.appendChild(document.createTextNode(' | '));
-                    detalleLi.appendChild(imagenIdiom);
-                  }                                    
+          // Función para obtener el nombre base del canal (sin el número final)
+          function obtenerNombreBaseCanal(nombreCompleto) {
+            if (!nombreCompleto) return null;
+            
+            // Buscar patrones como "ESPN+ USA 1", "ESPN 2 1", etc.
+            // Eliminar números al final y espacios
+            const match = nombreCompleto.match(/^(.*?)(?:\s+\d+)?$/);
+            return match ? match[1].trim() : nombreCompleto;
+          }
+
+          // 1. Separar y agrupar las opciones
+          data.f20_Detalles_Evento.forEach(detalle => {
+            if (!detalle.f22_opcion_Watch?.includes("sin_data")) {
+              // Obtener el nombre del canal
+              const nombreCompleto = detalle.f23_text_Idiom || detalle.f22_opcion_Watch;
+              
+              // Si tiene _orden_proveedor = 1, intentamos agruparlo por nombre base
+              if (detalle._orden_proveedor === 1 && nombreCompleto) {
+                const nombreBase = obtenerNombreBaseCanal(nombreCompleto);
+                
+                if (!opcionesAgrupadas[nombreBase]) {
+                  opcionesAgrupadas[nombreBase] = [];
                 }
-
-                // if (detalle.f21_imagen_Idiom) {
-
-                //     // imagenIdiom.src = detalle.f21_imagen_Idiom
-                //     // imagenIdiom.src = detalle.f25_proveedor === "1 DLHD"
-                //     //   ? 'images/HD.png'
-                //     //   : detalle.f21_imagen_Idiom;                 
-
-                //     imagenIdiom.alt = 'Idiom';
-                //     imagenIdiom.classList.add('img-idom');
-                //     detalleLi.appendChild(document.createTextNode(' | '));
-                //     detalleLi.appendChild(imagenIdiom);
-                // }
-
-
-
-                if (detalle.f23_text_Idiom && detalle.f24_url_Final) {
-                  const enlace = document.createElement('a');
-                  enlace.href = detalle.f24_url_Final;
-                  enlace.textContent = detalle.f23_text_Idiom;
-                  detalleLi.appendChild(document.createTextNode(' | '));
-
-                  if (enlace.href.includes("atptour")) {
-                      enlace.target = "_blank";
-                  }
-                    else if (enlace.href.includes("youtube.com")) {
-                      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                      const videoId = extraerVideoIdDeYouTube(enlace.href);
-                      if (videoId) {
-                        if (isMobile) {
-                            enlace.href = `vnd.youtube://${videoId}`;
-                            enlace.target = "_blank";
-                        } else {
-                            enlace.addEventListener('click', function(event) {
-                                event.preventDefault();
-                                mostrarIframe(`https://www.youtube.com/embed/${videoId}?autoplay=1`);
-                            });
-                        }
-                      } else {
-                          console.error('No se pudo extraer el ID del video de YouTube de la URL:', enlace.href);
-                      }
-                    }
-                  else {
-                      enlace.addEventListener('click', function(event) {
-                          event.preventDefault();
-                          mostrarIframe(enlace.href);
-                      });
-                  }
-                  detalleLi.appendChild(enlace);
-                }
-
-                // if (detalle.M.f22_opcion_Watch?.S && detalle.M.f24_url_Final?.S) {
-                if (detalle.f22_opcion_Watch && detalle.f24_url_Final) {
-                    const enlaceWatch = document.createElement('a');
-                    // enlaceWatch.href = detalle.M.f24_url_Final.S;
-                    enlaceWatch.href = detalle.f24_url_Final;
-                    // enlaceWatch.textContent = detalle.M.f22_opcion_Watch.S;
-                    enlaceWatch.textContent = detalle.f22_opcion_Watch;
-                    detalleLi.appendChild(document.createTextNode(' | '));
-                    if (enlaceWatch.href.includes("atptour") || enlaceWatch.href.includes("acestream")) {
-                        enlaceWatch.target = "_blank";
-                        if (enlaceWatch.href.includes("atptour")) {
-                          enlaceWatch.textContent = "ATP Tour"
-                        }
-                    }
-                      else if (enlaceWatch.href.includes("youtube.com")) {
-                        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                        const videoId = extraerVideoIdDeYouTube(enlaceWatch.href);
-                        if (videoId) {
-                          if (isMobile) {
-                              enlaceWatch.href = `vnd.youtube://${videoId}`;
-                              enlaceWatch.target = "_blank";
-                          } else {
-                              enlaceWatch.addEventListener('click', function(event) {
-                                  event.preventDefault();
-                                  mostrarIframe(`https://www.youtube.com/embed/${videoId}?autoplay=1`);
-                              });
-                          }
-                        } else {
-                            console.error('No se pudo extraer el ID del video de YouTube de la URL:', enlaceWatch.href);
-                        }
-                      }
-                    else {
-                        enlaceWatch.addEventListener('click', function(event) {
-                            event.preventDefault();
-                            mostrarIframe(enlaceWatch.href);
-                        });
-                    }
-                    detalleLi.appendChild(enlaceWatch);
-                }
-                  detalleLi.classList.add('registro-detalle');
-                  eventoDetalle.appendChild(detalleLi);
+                opcionesAgrupadas[nombreBase].push(detalle);
+              } else {
+                opcionesSueltas.push(detalle);
               }
+            }
+          });
+
+          // 2. Función auxiliar para crear enlaces
+          function crearEnlaceDesdeDetalle(detalle, textoEnlace = null) {
+            const enlace = document.createElement('a');
+            enlace.href = detalle.f24_url_Final;
+            enlace.textContent = textoEnlace || detalle.f23_text_Idiom || detalle.f22_opcion_Watch;
+            
+            const url = enlace.href;
+            
+            if (url.includes("atptour")) {
+              enlace.target = "_blank";
+              if (url.includes("atptour")) {
+                enlace.textContent = "ATP Tour";
+              }
+            } else if (url.includes("acestream")) {
+              enlace.target = "_blank";
+            } else if (url.includes("youtube.com")) {
+              const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+              const videoId = extraerVideoIdDeYouTube(url);
+              if (videoId) {
+                if (isMobile) {
+                  enlace.href = `vnd.youtube://${videoId}`;
+                  enlace.target = "_blank";
+                } else {
+                  enlace.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    mostrarIframe(`https://www.youtube.com/embed/${videoId}?autoplay=1`);
+                  });
+                }
+              } else {
+                console.error('No se pudo extraer el ID del video de YouTube de la URL:', url);
+              }
+            } else {
+              enlace.addEventListener('click', function(event) {
+                event.preventDefault();
+                mostrarIframe(enlace.href);
+              });
+            }
+            return enlace;
+          }
+
+
+          // 3. Procesar las opciones agrupadas
+          for (const [nombreBase, detalles] of Object.entries(opcionesAgrupadas)) {
+            const detalleLi = document.createElement('li');
+            detalleLi.classList.add('registro-detalle');
+
+            // Ordenar las opciones por su nombre completo para mantener el orden numérico
+            const detallesOrdenados = [...detalles].sort((a, b) => {
+              const nombreA = a.f23_text_Idiom || a.f22_opcion_Watch || '';
+              const nombreB = b.f23_text_Idiom || b.f22_opcion_Watch || '';
+              return nombreA.localeCompare(nombreB, undefined, { numeric: true });
             });
 
-            detalleEventoContainer.appendChild(eventoDetalle);
-            eventoDiv.appendChild(detalleEventoContainer);
-
-            const numDetalles = data.f20_Detalles_Evento.length;
-            if (numDetalles > 20) {
-              eventosContainerTOP.appendChild(eventoDiv);
-            } else {
-              eventosContainer.appendChild(eventoDiv);
+            // Añadir imagen del idioma (tomamos la del primer detalle del grupo)
+            const primerDetalle = detallesOrdenados[0];
+            const imagenIdiom = document.createElement('img');
+            
+            if (primerDetalle.f25_proveedor?.includes("DLHD")) {
+              imagenIdiom.src = 'images/HD.png';
+              imagenIdiom.alt = 'HD';
+              imagenIdiom.classList.add('img-idom');
+              detalleLi.appendChild(document.createTextNode(' | '));
+              detalleLi.appendChild(imagenIdiom);
+            } else if (primerDetalle.f21_imagen_Idiom) {
+              imagenIdiom.src = primerDetalle.f21_imagen_Idiom;
+              imagenIdiom.alt = 'Idiom';
+              imagenIdiom.classList.add('img-idom');
+              detalleLi.appendChild(document.createTextNode(' | '));
+              detalleLi.appendChild(imagenIdiom);
             }
+
+            // Añadir el nombre base del canal
+            detalleLi.appendChild(document.createTextNode(` ${nombreBase}: `));
+
+            // Añadir cada opción del grupo como un enlace separado por "|"
+            detallesOrdenados.forEach((detalle, index) => {
+              if (index > 0) {
+                detalleLi.appendChild(document.createTextNode(' | '));
+              }
+              
+              // Extraer el número de la opción del nombre completo
+              const nombreCompleto = detalle.f23_text_Idiom || detalle.f22_opcion_Watch || '';
+              const numeroMatch = nombreCompleto.match(/(\d+)$/);
+              let textoOpcion = '';
+              
+              if (detalle.f23_text_Idiom && detalle.f23_text_Idiom !== nombreBase) {
+                textoOpcion = detalle.f23_text_Idiom;
+              } else if (detalle.f22_opcion_Watch && detalle.f22_opcion_Watch !== nombreBase) {
+                textoOpcion = detalle.f22_opcion_Watch;
+              }
+              
+              // Si encontramos un número al final, mostrar solo el número
+              if (numeroMatch) {
+                textoOpcion = numeroMatch[1];
+              } else if (textoOpcion) {
+                // Limpiar el texto de opción
+                textoOpcion = textoOpcion.replace(nombreBase, '').trim();
+              }
+              
+              // Si después de todo sigue vacío, usar "Opción X"
+              if (!textoOpcion) {
+                textoOpcion = `${index + 1}`;
+              }
+              
+              const prefijo = 'Opción '; // Cambia a 'Opc ' si prefieres más corto
+              textoOpcion = prefijo + textoOpcion;              
+              
+              const enlace = crearEnlaceDesdeDetalle(detalle, textoOpcion);
+              detalleLi.appendChild(enlace);
+            });
+
+            eventoDetalle.appendChild(detalleLi);
+          }
+
+
+          // 4. Procesar las opciones sueltas (las que no se agruparon)
+          opcionesSueltas.forEach(detalle => {
+            const detalleLi = document.createElement('li');
+            detalleLi.classList.add('registro-detalle');
+
+            // Imagen de idioma
+            const imagenIdiom = document.createElement('img');
+            if (detalle.f25_proveedor?.includes("DLHD")) {
+              imagenIdiom.src = 'images/HD.png';
+              imagenIdiom.alt = 'HD';
+              imagenIdiom.classList.add('img-idom');
+              detalleLi.appendChild(document.createTextNode(' | '));
+              detalleLi.appendChild(imagenIdiom);
+            } else if (detalle.f21_imagen_Idiom) {
+              imagenIdiom.src = detalle.f21_imagen_Idiom;
+              imagenIdiom.alt = 'Idiom';
+              imagenIdiom.classList.add('img-idom');
+              detalleLi.appendChild(document.createTextNode(' | '));
+              detalleLi.appendChild(imagenIdiom);
+            }
+
+            // Texto del idioma y enlace
+            if (detalle.f23_text_Idiom && detalle.f24_url_Final) {
+              detalleLi.appendChild(document.createTextNode(' | '));
+              const enlace = crearEnlaceDesdeDetalle(detalle);
+              detalleLi.appendChild(enlace);
+            }
+
+            // Opción Watch
+            if (detalle.f22_opcion_Watch && detalle.f24_url_Final) {
+              detalleLi.appendChild(document.createTextNode(' | '));
+              const enlaceWatch = crearEnlaceDesdeDetalle(detalle);
+              detalleLi.appendChild(enlaceWatch);
+            }
+
+            eventoDetalle.appendChild(detalleLi);
+          });
+          // --- FIN DE LA LÓGICA DE AGRUPACIÓN MEJORADA ---
+
+          detalleEventoContainer.appendChild(eventoDetalle);
+          eventoDiv.appendChild(detalleEventoContainer);
+
+          const numDetalles = data.f20_Detalles_Evento.length;
+          if (numDetalles > 20) {
+            eventosContainerTOP.appendChild(eventoDiv);
+          } else {
+            eventosContainer.appendChild(eventoDiv);
+          }
 
         } else {
-            console.error("data.f20_Detalles_Evento no es un objeto o es nulo.");
+          console.error("data.f20_Detalles_Evento no es un objeto o es nulo.");
         }
       });
 
