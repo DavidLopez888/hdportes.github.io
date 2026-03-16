@@ -357,7 +357,7 @@ const fetchData = async (timezone = userTimezone) => {
                 textoOpcion = `${index + 1}`;
               }
               
-              const prefijo = 'Opción '; // Cambia a 'Opc ' si prefieres más corto
+              const prefijo = 'Opc. '; // Cambia a 'Opc ' si prefieres más corto
               textoOpcion = prefijo + textoOpcion;              
               
               const enlace = crearEnlaceDesdeDetalle(detalle, textoOpcion);
