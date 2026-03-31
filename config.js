@@ -1,7 +1,7 @@
 window._config = {
     aws: {
-      identityPoolId: "us-east-1:8c36ce9b-ef14-4859-9e55-4fb550c81615",
-      region: "us-east-1"
+      identityPoolId: "eu-west-1:38f122f3-b74b-4f75-831d-e2b8272d1f44",
+      region: "eu-west-1"
     }
 
   };
