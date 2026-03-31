@@ -1,6 +1,6 @@
 // Configurar las credenciales de AWS
 AWS.config.update({
-  region: 'us-east-1',
+  region: 'eu-west-1',
   credentials: new AWS.CognitoIdentityCredentials({
     IdentityPoolId: window._config.aws.identityPoolId
   })
