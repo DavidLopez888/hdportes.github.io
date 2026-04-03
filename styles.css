@@ -253,7 +253,78 @@ body {
   display: none; /* Ocultar por defecto */
 }
 
+/* Grupos de opciones */
+.options-group {
+  margin-top: 20px;
+  padding-top: 10px;
+  /* border-top: 1px solid #444; */
+}
 
+.options-group-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 15px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #ddd;
+}
+
+.rec-logo-link {
+  display: inline-block;
+  line-height: 0;
+}
+
+.rec-logo {
+  height: 30px;
+  width: auto;
+  transition: transform 0.2s;
+}
+
+.rec-logo:hover {
+  transform: scale(1.05);
+}
+
+.rec-logo-ace {
+  height: 35px;
+}
+
+/* Filas de opciones */
+.options-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-left: 20px;
+}
+
+/* Botones estilo moderno */
+.option-button {
+  background: rgba(20, 20, 30, 0.8);
+  border: 1px solid #3a6ea5;
+  border-radius: 20px;
+  padding: 5px 16px;
+  font-size: 14px;
+  font-weight: normal;
+  color: #c0d0e0;
+  cursor: pointer;
+  transition: 0.2s;
+  box-shadow: 0 0 3px rgba(58, 110, 165, 0.3);
+}
+
+.option-button:hover {
+  background: #3a6ea5;
+  border-color: #8ab3d0;
+  color: white;
+  box-shadow: 0 0 8px #3a6ea5;
+  transform: scale(1.02);
+}
+
+.option-button:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
 
 
 /* Footer Styles */
@@ -319,4 +390,17 @@ body {
 
 #site-footer a:hover {
   color: #ffffff; /* Cambiar color al pasar el mouse */
+}
+
+
+/* Forzar tamaño de logos recomendados dentro de los headers, anulando la regla genérica */
+.detalle-evento .options-group-header .rec-logo {
+  height: 30px !important;
+  width: auto;
+  max-width: none;
+}
+.detalle-evento .options-group-header .rec-logo-ace {
+  height: 35px !important;
+  width: auto;
+  max-width: none;
 }

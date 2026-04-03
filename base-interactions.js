@@ -189,11 +189,13 @@ const fetchData = async (timezone = userTimezone) => {
           }
         });
 
+
+                        
         if (typeof data.f20_Detalles_Evento === 'object' && data.f20_Detalles_Evento !== null) {
           data.f20_Detalles_Evento.sort((a, b) => {
             return (a._orden_proveedor || 99) - (b._orden_proveedor || 99);
           });
-          
+
           const detalleEventoContainer = document.createElement('div');
           detalleEventoContainer.classList.add('detalle-evento-container');
           detalleEventoContainer.style.display = 'none';
@@ -219,193 +221,246 @@ const fetchData = async (timezone = userTimezone) => {
           const eventoDetalle = document.createElement('ul');
           eventoDetalle.classList.add('detalle-evento');
 
-          // --- INICIO DE LA LÓGICA DE AGRUPACIÓN MEJORADA ---
-          const opcionesAgrupadas = {};
-          const opcionesSueltas = [];
+          // --- Separar web (1,3,4,5) y acestream (6-10) para las cabeceras ---
+          const webDetails = data.f20_Detalles_Evento.filter(d => [1, 3, 4, 5].includes(d._orden_proveedor));
+          const aceDetails = data.f20_Detalles_Evento.filter(d => [6, 7, 8, 9, 10].includes(d._orden_proveedor));
 
-          // Función para obtener el nombre base del canal (sin el número final)
+          // --- Funciones auxiliares para obtener nombre base ---
           function obtenerNombreBaseCanal(nombreCompleto) {
             if (!nombreCompleto) return null;
-            
-            // Buscar patrones como "ESPN+ USA 1", "ESPN 2 1", etc.
-            // Eliminar números al final y espacios
             const match = nombreCompleto.match(/^(.*?)(?:\s+\d+)?$/);
             return match ? match[1].trim() : nombreCompleto;
           }
 
-          // 1. Separar y agrupar las opciones
-          data.f20_Detalles_Evento.forEach(detalle => {
-            if (!detalle.f22_opcion_Watch?.includes("sin_data")) {
-              // Obtener el nombre del canal
-              const nombreCompleto = detalle.f23_text_Idiom || detalle.f22_opcion_Watch;
-              
-              // Si tiene _orden_proveedor = 1, intentamos agruparlo por nombre base
-              if (detalle._orden_proveedor === 1 && nombreCompleto) {
-                const nombreBase = obtenerNombreBaseCanal(nombreCompleto);
-                
-                if (!opcionesAgrupadas[nombreBase]) {
-                  opcionesAgrupadas[nombreBase] = [];
-                }
-                opcionesAgrupadas[nombreBase].push(detalle);
-              } else {
-                opcionesSueltas.push(detalle);
-              }
-            }
-          });
+          function obtenerNombreBaseCanalAce(nombreCompleto) {
+            if (!nombreCompleto) return null;
+            // Elimina " Op1", " Op2", etc. al final (espacio + Op + número)
+            const match = nombreCompleto.match(/^(.*?)(?:\s+Op\d+)?$/);
+            return match ? match[1].trim() : nombreCompleto;
+          }
 
-          // 2. Función auxiliar para crear enlaces
-          function crearEnlaceDesdeDetalle(detalle, textoEnlace = null) {
-            const enlace = document.createElement('a');
-            enlace.href = detalle.f24_url_Final;
-            enlace.textContent = textoEnlace || detalle.f23_text_Idiom || detalle.f22_opcion_Watch;
-            
-            const url = enlace.href;
-            
+          // --- Función que crea BOTÓN en lugar de enlace (misma lógica de eventos) ---
+          function crearBotonDesdeDetalle(detalle, textoPersonalizado = null) {
+            const boton = document.createElement('button');
+            boton.textContent = textoPersonalizado || detalle.f23_text_Idiom || detalle.f22_opcion_Watch;
+            boton.classList.add('option-button');
+
+            const url = detalle.f24_url_Final;
+            if (!url) return boton;
+
             if (url.includes("atptour")) {
-              enlace.target = "_blank";
-              if (url.includes("atptour")) {
-                enlace.textContent = "ATP Tour";
-              }
+              boton.textContent = "ATP Tour";
+              boton.addEventListener('click', () => window.open(url, '_blank'));
             } else if (url.includes("acestream")) {
-              enlace.target = "_blank";
+              boton.addEventListener('click', () => window.open(url, '_blank'));
             } else if (url.includes("youtube.com")) {
               const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
               const videoId = extraerVideoIdDeYouTube(url);
               if (videoId) {
                 if (isMobile) {
-                  enlace.href = `vnd.youtube://${videoId}`;
-                  enlace.target = "_blank";
+                  boton.addEventListener('click', () => window.open(`vnd.youtube://${videoId}`, '_blank'));
                 } else {
-                  enlace.addEventListener('click', function(event) {
-                    event.preventDefault();
+                  boton.addEventListener('click', (e) => {
+                    e.preventDefault();
                     mostrarIframe(`https://www.youtube.com/embed/${videoId}?autoplay=1`);
                   });
                 }
               } else {
-                console.error('No se pudo extraer el ID del video de YouTube de la URL:', url);
+                console.error('No se pudo extraer ID de YouTube:', url);
               }
             } else {
-              enlace.addEventListener('click', function(event) {
-                event.preventDefault();
-                mostrarIframe(enlace.href);
+              boton.addEventListener('click', (e) => {
+                e.preventDefault();
+                mostrarIframe(url);
               });
             }
-            return enlace;
+            return boton;
           }
 
+          // --- Función para procesar una lista de detalles (web o ace) ---
+          function procesarLista(detalles, tipo) {
+            const fragment = document.createDocumentFragment();
 
-          // 3. Procesar las opciones agrupadas
-          for (const [nombreBase, detalles] of Object.entries(opcionesAgrupadas)) {
-            const detalleLi = document.createElement('li');
-            detalleLi.classList.add('registro-detalle');
-
-            // Ordenar las opciones por su nombre completo para mantener el orden numérico
-            const detallesOrdenados = [...detalles].sort((a, b) => {
-              const nombreA = a.f23_text_Idiom || a.f22_opcion_Watch || '';
-              const nombreB = b.f23_text_Idiom || b.f22_opcion_Watch || '';
-              return nombreA.localeCompare(nombreB, undefined, { numeric: true });
-            });
-
-            // Añadir imagen del idioma (tomamos la del primer detalle del grupo)
-            const primerDetalle = detallesOrdenados[0];
-            const imagenIdiom = document.createElement('img');
-            
-            if (primerDetalle.f25_proveedor?.includes("DLHD")) {
-              imagenIdiom.src = 'images/HD.png';
-              imagenIdiom.alt = 'HD';
-              imagenIdiom.classList.add('img-idom');
-              detalleLi.appendChild(document.createTextNode(' | '));
-              detalleLi.appendChild(imagenIdiom);
-            } else if (primerDetalle.f21_imagen_Idiom) {
-              imagenIdiom.src = primerDetalle.f21_imagen_Idiom;
-              imagenIdiom.alt = 'Idiom';
-              imagenIdiom.classList.add('img-idom');
-              detalleLi.appendChild(document.createTextNode(' | '));
-              detalleLi.appendChild(imagenIdiom);
+            // Añadir cabecera con logos si hay elementos
+            if (detalles.length > 0) {
+              const header = document.createElement('div');
+              header.classList.add('options-group-header');
+              if (tipo === 'web') {
+                header.innerHTML = `
+                  <span>⚡Canales Web – Mejor experiencia con :</span>
+                  <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+                    <!-- Brave Section -->
+                    <div style="border: 1px solid rgba(75, 85, 99, 0.5); border-radius: 12px; padding: 5px 5px; background: rgba(0, 0, 0, 0.3); display: flex; align-items: center; gap: 8px;">
+                      <a href="https://brave.com/download/" target="_blank" style="display: inline-block; line-height: 0;">
+                        <img src="https://brave.com/static-assets/images/brave-logo-sans-text.svg" alt="Brave" class="rec-logo" style="height: 30px;">
+                      </a>
+                      <a href="https://laptop-updates.brave.com/download/BRV040?bitness=64" target="_blank" style="display: inline-block;">
+                        <img src="https://i.postimg.cc/D0Px1wWJ/Microsoftstore.png" alt="Windows" class="rec-logo" style="height: 28px;">
+                      </a>
+                      <a href="https://play.google.com/store/apps/details?id=com.brave.browser" target="_blank" style="display: inline-block;">
+                        <img src="https://i.postimg.cc/x836L1kH/androidstore.png" alt="Android" class="rec-logo" style="height: 28px;">
+                      </a>
+                      <a href="https://apps.apple.com/cl/app/brave-navegador-web-privado/id1052879175" target="_blank" style="display: inline-block;">
+                        <img src="https://i.postimg.cc/K8z0gFmc/applestore.png" alt="iOS" class="rec-logo" style="height: 28px;">
+                      </a>
+                    </div>
+                    <!-- Tor Section -->
+                    <div style="border: 1px solid rgba(75, 85, 99, 0.5); border-radius: 12px; padding: 5px 5px; background: rgba(0, 0, 0, 0.3); display: flex; align-items: center; gap: 8px;">
+                      <a href="https://www.torproject.org/download/" target="_blank" style="display: inline-block; line-height: 0;">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/c/c9/Tor_Browser_icon.svg" alt="Tor Browser" class="rec-logo" style="height: 30px;">
+                      </a>
+                      <a href="https://www.torproject.org/dist/torbrowser/15.0.8/tor-browser-windows-x86_64-portable-15.0.8.exe" target="_blank" style="display: inline-block;">
+                        <img src="https://i.postimg.cc/D0Px1wWJ/Microsoftstore.png" alt="Windows" class="rec-logo" style="height: 28px;">
+                      </a>
+                      <a href="https://www.torproject.org/download/#android" target="_blank" style="display: inline-block;">
+                        <img src="https://i.postimg.cc/x836L1kH/androidstore.png" alt="Android" class="rec-logo" style="height: 28px;">
+                      </a>
+                      <a href="https://apps.apple.com/us/app/tor-browser-the-onion-vpn/id1144161643" target="_blank" style="display: inline-block;">
+                        <img src="https://i.postimg.cc/K8z0gFmc/applestore.png" alt="iOS" class="rec-logo" style="height: 28px;">
+                      </a>
+                    </div>
+                  </div>
+                `;
+              } else if (tipo === 'ace') {
+                header.innerHTML = `
+                  <span>🎬Canales Acestream – Calidad superior en video – Necesitas :</span>
+                  <div style="border: 1px solid rgba(75, 85, 99, 0.5); border-radius: 12px; padding: 5px 5px; background: rgba(0, 0, 0, 0.3); display: inline-flex; align-items: center; gap: 8px; margin-left: 10px;">
+                    <a href="https://acestream.org/" target="_blank" style="display: inline-block; line-height: 0;">
+                      <img src="./images/ace_logo.png" alt="Ace Stream" class="rec-logo rec-logo-ace" style="height: 35px;">
+                    </a>
+                    <a href="https://download.acestream.media/products/acestream-full/win/latest" target="_blank" style="display: inline-block;">
+                      <img src="https://i.postimg.cc/D0Px1wWJ/Microsoftstore.png" alt="Windows" class="rec-logo rec-logo-ace" style="height: 28px;">
+                    </a>
+                    <a href="https://play.google.com/store/apps/details?id=org.acestream.node" target="_blank" style="display: inline-block;">
+                      <img src="https://i.postimg.cc/x836L1kH/androidstore.png" alt="Android" class="rec-logo rec-logo-ace" style="height: 28px;">
+                    </a>
+                  </div>
+                `;
+              }
+              fragment.appendChild(header);
             }
 
-            // Añadir el nombre base del canal
-            detalleLi.appendChild(document.createTextNode(` ${nombreBase}: `));
 
-            // Añadir cada opción del grupo como un enlace separado por "|"
-            detallesOrdenados.forEach((detalle, index) => {
-              if (index > 0) {
-                detalleLi.appendChild(document.createTextNode(' | '));
+            // --- LÓGICA DE AGRUPACIÓN MEJORADA: agrupa orden 1 y orden 10 ---
+            const opcionesAgrupadas = {};   // clave: nombreBase, valor: array de detalles
+            const opcionesSueltas = [];
+
+            detalles.forEach(detalle => {
+              if (!detalle.f22_opcion_Watch?.includes("sin_data")) {
+                const nombreCompleto = detalle.f23_text_Idiom || detalle.f22_opcion_Watch;
+                let agrupar = false;
+                let nombreBase = null;
+
+                if (detalle._orden_proveedor === 1 && nombreCompleto) {
+                  nombreBase = obtenerNombreBaseCanal(nombreCompleto);
+                  if (nombreBase) agrupar = true;
+                } else if (detalle._orden_proveedor === 10 && nombreCompleto) {
+                  nombreBase = obtenerNombreBaseCanalAce(nombreCompleto);
+                  if (nombreBase) agrupar = true;
+                }
+
+                if (agrupar) {
+                  if (!opcionesAgrupadas[nombreBase]) opcionesAgrupadas[nombreBase] = [];
+                  opcionesAgrupadas[nombreBase].push(detalle);
+                } else {
+                  opcionesSueltas.push(detalle);
+                }
               }
-              
-              // Extraer el número de la opción del nombre completo
-              const nombreCompleto = detalle.f23_text_Idiom || detalle.f22_opcion_Watch || '';
-              const numeroMatch = nombreCompleto.match(/(\d+)$/);
-              let textoOpcion = '';
-              
-              if (detalle.f23_text_Idiom && detalle.f23_text_Idiom !== nombreBase) {
-                textoOpcion = detalle.f23_text_Idiom;
-              } else if (detalle.f22_opcion_Watch && detalle.f22_opcion_Watch !== nombreBase) {
-                textoOpcion = detalle.f22_opcion_Watch;
-              }
-              
-              // Si encontramos un número al final, mostrar solo el número
-              if (numeroMatch) {
-                textoOpcion = numeroMatch[1];
-              } else if (textoOpcion) {
-                // Limpiar el texto de opción
-                textoOpcion = textoOpcion.replace(nombreBase, '').trim();
-              }
-              
-              // Si después de todo sigue vacío, usar "Opción X"
-              if (!textoOpcion) {
-                textoOpcion = `${index + 1}`;
-              }
-              
-              const prefijo = 'Opc. '; // Cambia a 'Opc ' si prefieres más corto
-              textoOpcion = prefijo + textoOpcion;              
-              
-              const enlace = crearEnlaceDesdeDetalle(detalle, textoOpcion);
-              detalleLi.appendChild(enlace);
             });
 
-            eventoDetalle.appendChild(detalleLi);
+            // Procesar grupos (tanto orden 1 como orden 10)
+            for (const [nombreBase, detallesGrupo] of Object.entries(opcionesAgrupadas)) {
+              const li = document.createElement('li');
+              li.classList.add('registro-detalle');
+
+              // Ordenar las opciones numéricamente según el número de opción (Op1, Op2, etc.)
+              const detallesOrdenados = [...detallesGrupo].sort((a, b) => {
+                const nombreA = a.f23_text_Idiom || a.f22_opcion_Watch || '';
+                const nombreB = b.f23_text_Idiom || b.f22_opcion_Watch || '';
+                // Extraer número (puede ser solo un dígito al final o "OpX")
+                const numA = parseInt(nombreA.match(/(\d+)$/)?.[1] || nombreA.match(/Op(\d+)/)?.[1] || '0');
+                const numB = parseInt(nombreB.match(/(\d+)$/)?.[1] || nombreB.match(/Op(\d+)/)?.[1] || '0');
+                return numA - numB;
+              });
+
+              // Imagen del primer detalle
+              const primerDetalle = detallesOrdenados[0];
+              const imagenIdiom = document.createElement('img');
+              if (primerDetalle.f25_proveedor?.includes("DLHD")) {
+                imagenIdiom.src = 'images/HD.png';
+                imagenIdiom.alt = 'HD';
+                imagenIdiom.classList.add('img-idom');
+                li.appendChild(document.createTextNode(' | '));
+                li.appendChild(imagenIdiom);
+              } else if (primerDetalle.f21_imagen_Idiom) {
+                imagenIdiom.src = primerDetalle.f21_imagen_Idiom;
+                imagenIdiom.alt = 'Idiom';
+                imagenIdiom.classList.add('img-idom');
+                li.appendChild(document.createTextNode(' | '));
+                li.appendChild(imagenIdiom);
+              }
+
+              // Nombre del canal
+              li.appendChild(document.createTextNode(` ${nombreBase}: `));
+
+              // Añadir botones separados por " | "
+              detallesOrdenados.forEach((detalle, index) => {
+                if (index > 0) li.appendChild(document.createTextNode(' | '));
+                const textoBoton = `Opc. ${index + 1}`;
+                const boton = crearBotonDesdeDetalle(detalle, textoBoton);
+                li.appendChild(boton);
+              });
+
+              fragment.appendChild(li);
+            }
+
+            // Procesar opciones sueltas (no agrupadas, incluye órdenes 3,4,5,6,7,8,9)
+            opcionesSueltas.forEach(detalle => {
+              const li = document.createElement('li');
+              li.classList.add('registro-detalle');
+
+              // Imagen de idioma
+              const imagenIdiom = document.createElement('img');
+              if (detalle.f25_proveedor?.includes("DLHD")) {
+                imagenIdiom.src = 'images/HD.png';
+                imagenIdiom.alt = 'HD';
+                imagenIdiom.classList.add('img-idom');
+                li.appendChild(document.createTextNode(' | '));
+                li.appendChild(imagenIdiom);
+              } else if (detalle.f21_imagen_Idiom) {
+                imagenIdiom.src = detalle.f21_imagen_Idiom;
+                imagenIdiom.alt = 'Idiom';
+                imagenIdiom.classList.add('img-idom');
+                li.appendChild(document.createTextNode(' | '));
+                li.appendChild(imagenIdiom);
+              }
+
+              // Texto y botón
+              if (detalle.f23_text_Idiom && detalle.f24_url_Final) {
+                li.appendChild(document.createTextNode(' | '));
+                const boton = crearBotonDesdeDetalle(detalle);
+                li.appendChild(boton);
+              }
+              if (detalle.f22_opcion_Watch && detalle.f24_url_Final) {
+                li.appendChild(document.createTextNode(' | '));
+                const botonWatch = crearBotonDesdeDetalle(detalle);
+                li.appendChild(botonWatch);
+              }
+
+              fragment.appendChild(li);
+            });
+
+            return fragment;
           }
 
-
-          // 4. Procesar las opciones sueltas (las que no se agruparon)
-          opcionesSueltas.forEach(detalle => {
-            const detalleLi = document.createElement('li');
-            detalleLi.classList.add('registro-detalle');
-
-            // Imagen de idioma
-            const imagenIdiom = document.createElement('img');
-            if (detalle.f25_proveedor?.includes("DLHD")) {
-              imagenIdiom.src = 'images/HD.png';
-              imagenIdiom.alt = 'HD';
-              imagenIdiom.classList.add('img-idom');
-              detalleLi.appendChild(document.createTextNode(' | '));
-              detalleLi.appendChild(imagenIdiom);
-            } else if (detalle.f21_imagen_Idiom) {
-              imagenIdiom.src = detalle.f21_imagen_Idiom;
-              imagenIdiom.alt = 'Idiom';
-              imagenIdiom.classList.add('img-idom');
-              detalleLi.appendChild(document.createTextNode(' | '));
-              detalleLi.appendChild(imagenIdiom);
-            }
-
-            // Texto del idioma y enlace
-            if (detalle.f23_text_Idiom && detalle.f24_url_Final) {
-              detalleLi.appendChild(document.createTextNode(' | '));
-              const enlace = crearEnlaceDesdeDetalle(detalle);
-              detalleLi.appendChild(enlace);
-            }
-
-            // Opción Watch
-            if (detalle.f22_opcion_Watch && detalle.f24_url_Final) {
-              detalleLi.appendChild(document.createTextNode(' | '));
-              const enlaceWatch = crearEnlaceDesdeDetalle(detalle);
-              detalleLi.appendChild(enlaceWatch);
-            }
-
-            eventoDetalle.appendChild(detalleLi);
-          });
-          // --- FIN DE LA LÓGICA DE AGRUPACIÓN MEJORADA ---
+          // Procesar primero las opciones web (con su cabecera)
+          if (webDetails.length > 0) {
+            eventoDetalle.appendChild(procesarLista(webDetails, 'web'));
+          }
+          // Procesar las opciones acestream (con su cabecera)
+          if (aceDetails.length > 0) {
+            eventoDetalle.appendChild(procesarLista(aceDetails, 'ace'));
+          }
 
           detalleEventoContainer.appendChild(eventoDetalle);
           eventoDiv.appendChild(detalleEventoContainer);
@@ -420,6 +475,8 @@ const fetchData = async (timezone = userTimezone) => {
         } else {
           console.error("data.f20_Detalles_Evento no es un objeto o es nulo.");
         }
+
+
       });
 
   } catch (error) {
