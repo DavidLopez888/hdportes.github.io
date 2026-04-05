@@ -223,7 +223,7 @@ const fetchData = async (timezone = userTimezone) => {
 
           // --- Separar web (1,3,4,5) y acestream (6-10) para las cabeceras ---
           const webDetails = data.f20_Detalles_Evento.filter(d => [1, 3, 4, 5].includes(d._orden_proveedor));
-          const aceDetails = data.f20_Detalles_Evento.filter(d => [6, 7, 8, 9, 10].includes(d._orden_proveedor));
+          const aceDetails = data.f20_Detalles_Evento.filter(d => [6, 7, 8, 9].includes(d._orden_proveedor));
 
           // --- Funciones auxiliares para obtener nombre base ---
           function obtenerNombreBaseCanal(nombreCompleto) {
@@ -278,6 +278,7 @@ const fetchData = async (timezone = userTimezone) => {
           }
 
           // --- Función para procesar una lista de detalles (web o ace) ---
+          // --- Función para procesar una lista de detalles ---
           function procesarLista(detalles, tipo) {
             const fragment = document.createDocumentFragment();
 
@@ -287,9 +288,8 @@ const fetchData = async (timezone = userTimezone) => {
               header.classList.add('options-group-header');
               if (tipo === 'web') {
                 header.innerHTML = `
-                  <span>⚡Canales Web – Mejor experiencia con :</span>
+                  <span>⚡Canales Web – Mejor si usas :</span>
                   <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
-                    <!-- Brave Section -->
                     <div style="border: 1px solid rgba(75, 85, 99, 0.5); border-radius: 12px; padding: 5px 5px; background: rgba(0, 0, 0, 0.3); display: flex; align-items: center; gap: 8px;">
                       <a href="https://brave.com/download/" target="_blank" style="display: inline-block; line-height: 0;">
                         <img src="https://brave.com/static-assets/images/brave-logo-sans-text.svg" alt="Brave" class="rec-logo" style="height: 30px;">
@@ -304,7 +304,6 @@ const fetchData = async (timezone = userTimezone) => {
                         <img src="https://i.postimg.cc/K8z0gFmc/applestore.png" alt="iOS" class="rec-logo" style="height: 28px;">
                       </a>
                     </div>
-                    <!-- Tor Section -->
                     <div style="border: 1px solid rgba(75, 85, 99, 0.5); border-radius: 12px; padding: 5px 5px; background: rgba(0, 0, 0, 0.3); display: flex; align-items: center; gap: 8px;">
                       <a href="https://www.torproject.org/download/" target="_blank" style="display: inline-block; line-height: 0;">
                         <img src="https://upload.wikimedia.org/wikipedia/commons/c/c9/Tor_Browser_icon.svg" alt="Tor Browser" class="rec-logo" style="height: 30px;">
@@ -321,72 +320,101 @@ const fetchData = async (timezone = userTimezone) => {
                     </div>
                   </div>
                 `;
-              } else if (tipo === 'ace') {
-                header.innerHTML = `
-                  <span>🎬Canales Acestream – Calidad superior en video – Necesitas :</span>
-                  <div style="border: 1px solid rgba(75, 85, 99, 0.5); border-radius: 12px; padding: 5px 5px; background: rgba(0, 0, 0, 0.3); display: inline-flex; align-items: center; gap: 8px; margin-left: 10px;">
-                    <a href="https://acestream.org/" target="_blank" style="display: inline-block; line-height: 0;">
-                      <img src="./images/ace_logo.png" alt="Ace Stream" class="rec-logo rec-logo-ace" style="height: 35px;">
-                    </a>
-                    <a href="https://download.acestream.media/products/acestream-full/win/latest" target="_blank" style="display: inline-block;">
-                      <img src="https://i.postimg.cc/D0Px1wWJ/Microsoftstore.png" alt="Windows" class="rec-logo rec-logo-ace" style="height: 28px;">
-                    </a>
-                    <a href="https://play.google.com/store/apps/details?id=org.acestream.node" target="_blank" style="display: inline-block;">
-                      <img src="https://i.postimg.cc/x836L1kH/androidstore.png" alt="Android" class="rec-logo rec-logo-ace" style="height: 28px;">
-                    </a>
-                  </div>
-                `;
-              }
-              fragment.appendChild(header);
+            } else if (tipo === 'ace') {
+            header.innerHTML = `
+              <span>🎬Canales Acestream – Calidad superior en video – Necesitas :</span>
+              <div style="border: 1px solid rgba(75, 85, 99, 0.5); border-radius: 12px; padding: 5px 5px; background: rgba(0, 0, 0, 0.3); display: inline-flex; align-items: center; gap: 8px; margin-left: 10px;">
+                <a href="https://acestream.org/" target="_blank" style="display: inline-block; line-height: 0;">
+                  <img src="./images/ace_logo.png" alt="Ace Stream" class="rec-logo rec-logo-ace" style="height: 35px;">
+                </a>
+                <a href="https://download.acestream.media/products/acestream-full/win/latest" target="_blank" style="display: inline-block;">
+                  <img src="https://i.postimg.cc/D0Px1wWJ/Microsoftstore.png" alt="Windows" class="rec-logo rec-logo-ace" style="height: 28px;">
+                </a>
+                <a href="https://play.google.com/store/apps/details?id=org.acestream.node" target="_blank" style="display: inline-block;">
+                  <img src="https://i.postimg.cc/x836L1kH/androidstore.png" alt="Android" class="rec-logo rec-logo-ace" style="height: 28px;">
+                </a>
+              </div>
+            `;
             }
+            fragment.appendChild(header);
+              }
 
 
-            // --- LÓGICA DE AGRUPACIÓN MEJORADA: agrupa orden 1 y orden 10 ---
-            const opcionesAgrupadas = {};   // clave: nombreBase, valor: array de detalles
-            const opcionesSueltas = [];
+            // --- LÓGICA DE AGRUPACIÓN: agrupa por nombre base ---
+            const grupos = new Map(); // clave: nombreBase, valor: { ordenMinimo, detalles }
+
+            // Función para limpiar el nombre del canal (eliminar calidades, números, asteriscos)
+            function limpiarNombreCanal(nombreCompleto) {
+              if (!nombreCompleto) return null;
+              let limpio = nombreCompleto
+                .replace(/\s*\d{3,4}p\s*/gi, ' ')      // elimina 1080p, 720p
+                .replace(/\s*FHD\s*/gi, ' ')
+                .replace(/\s*HD\s*/gi, ' ')
+                .replace(/\s*SD\s*/gi, ' ')
+                .replace(/\s*\*\s*/g, ' ')
+                .replace(/\s+\d+$/, '')                // elimina números al final
+                .replace(/\s+/g, ' ')                  // espacios múltiples a uno
+                .trim();
+              return limpio;
+            }
 
             detalles.forEach(detalle => {
               if (!detalle.f22_opcion_Watch?.includes("sin_data")) {
                 const nombreCompleto = detalle.f23_text_Idiom || detalle.f22_opcion_Watch;
-                let agrupar = false;
-                let nombreBase = null;
-
-                if (detalle._orden_proveedor === 1 && nombreCompleto) {
-                  nombreBase = obtenerNombreBaseCanal(nombreCompleto);
-                  if (nombreBase) agrupar = true;
-                } else if (detalle._orden_proveedor === 10 && nombreCompleto) {
-                  nombreBase = obtenerNombreBaseCanalAce(nombreCompleto);
-                  if (nombreBase) agrupar = true;
-                }
-
-                if (agrupar) {
-                  if (!opcionesAgrupadas[nombreBase]) opcionesAgrupadas[nombreBase] = [];
-                  opcionesAgrupadas[nombreBase].push(detalle);
-                } else {
-                  opcionesSueltas.push(detalle);
+                const ordenProveedor = detalle._orden_proveedor;
+                
+                // Limpiar el nombre para agrupar
+                const nombreLimpio = limpiarNombreCanal(nombreCompleto);
+                
+                // Si el nombre limpio es válido, agrupar
+                if (nombreLimpio && nombreLimpio.length > 3) {
+                  if (!grupos.has(nombreLimpio)) {
+                    grupos.set(nombreLimpio, {
+                      ordenMinimo: ordenProveedor,
+                      detalles: []
+                    });
+                  }
+                  const grupo = grupos.get(nombreLimpio);
+                  grupo.detalles.push(detalle);
+                  // Actualizar el orden mínimo del grupo
+                  if (ordenProveedor < grupo.ordenMinimo) {
+                    grupo.ordenMinimo = ordenProveedor;
+                  }
                 }
               }
             });
 
-            // Procesar grupos (tanto orden 1 como orden 10)
-            for (const [nombreBase, detallesGrupo] of Object.entries(opcionesAgrupadas)) {
+            // Convertir grupos a array y ordenar por ordenMinimo
+            const gruposArray = Array.from(grupos.entries()).map(([nombreBase, data]) => ({
+              nombreBase,
+              orden: data.ordenMinimo,
+              detalles: data.detalles
+            }));
+
+            // Ordenar grupos por orden (menor a mayor)
+            gruposArray.sort((a, b) => a.orden - b.orden);
+
+            // Procesar grupos
+            for (const { nombreBase, detalles: detallesGrupo } of gruposArray) {
               const li = document.createElement('li');
               li.classList.add('registro-detalle');
 
-              // Ordenar las opciones numéricamente según el número de opción (Op1, Op2, etc.)
+              // Ordenar las opciones dentro del grupo por el número de opción
               const detallesOrdenados = [...detallesGrupo].sort((a, b) => {
                 const nombreA = a.f23_text_Idiom || a.f22_opcion_Watch || '';
                 const nombreB = b.f23_text_Idiom || b.f22_opcion_Watch || '';
-                // Extraer número (puede ser solo un dígito al final o "OpX")
+                // Extraer número del final o de "OpX"
                 const numA = parseInt(nombreA.match(/(\d+)$/)?.[1] || nombreA.match(/Op(\d+)/)?.[1] || '0');
                 const numB = parseInt(nombreB.match(/(\d+)$/)?.[1] || nombreB.match(/Op(\d+)/)?.[1] || '0');
                 return numA - numB;
               });
 
-              // Imagen del primer detalle
+              // Imagen del primer detalle - Siempre mostrar HD.png para Acestream y DLHD
               const primerDetalle = detallesOrdenados[0];
               const imagenIdiom = document.createElement('img');
-              if (primerDetalle.f25_proveedor?.includes("DLHD")) {
+
+              // Para Acestream (tipo 'ace') o DLHD, mostrar HD.png
+              if (tipo === 'ace' || primerDetalle.f25_proveedor?.includes("DLHD")) {
                 imagenIdiom.src = 'images/HD.png';
                 imagenIdiom.alt = 'HD';
                 imagenIdiom.classList.add('img-idom');
@@ -403,52 +431,16 @@ const fetchData = async (timezone = userTimezone) => {
               // Nombre del canal
               li.appendChild(document.createTextNode(` ${nombreBase}: `));
 
-              // Añadir botones separados por " | "
+              // Añadir botones con "Opc. 1", "Opc. 2", etc.
               detallesOrdenados.forEach((detalle, index) => {
                 if (index > 0) li.appendChild(document.createTextNode(' | '));
-                const textoBoton = `Opc. ${index + 1}`;
+                const textoBoton = `Op. ${index + 1}`;
                 const boton = crearBotonDesdeDetalle(detalle, textoBoton);
                 li.appendChild(boton);
               });
 
               fragment.appendChild(li);
             }
-
-            // Procesar opciones sueltas (no agrupadas, incluye órdenes 3,4,5,6,7,8,9)
-            opcionesSueltas.forEach(detalle => {
-              const li = document.createElement('li');
-              li.classList.add('registro-detalle');
-
-              // Imagen de idioma
-              const imagenIdiom = document.createElement('img');
-              if (detalle.f25_proveedor?.includes("DLHD")) {
-                imagenIdiom.src = 'images/HD.png';
-                imagenIdiom.alt = 'HD';
-                imagenIdiom.classList.add('img-idom');
-                li.appendChild(document.createTextNode(' | '));
-                li.appendChild(imagenIdiom);
-              } else if (detalle.f21_imagen_Idiom) {
-                imagenIdiom.src = detalle.f21_imagen_Idiom;
-                imagenIdiom.alt = 'Idiom';
-                imagenIdiom.classList.add('img-idom');
-                li.appendChild(document.createTextNode(' | '));
-                li.appendChild(imagenIdiom);
-              }
-
-              // Texto y botón
-              if (detalle.f23_text_Idiom && detalle.f24_url_Final) {
-                li.appendChild(document.createTextNode(' | '));
-                const boton = crearBotonDesdeDetalle(detalle);
-                li.appendChild(boton);
-              }
-              if (detalle.f22_opcion_Watch && detalle.f24_url_Final) {
-                li.appendChild(document.createTextNode(' | '));
-                const botonWatch = crearBotonDesdeDetalle(detalle);
-                li.appendChild(botonWatch);
-              }
-
-              fragment.appendChild(li);
-            });
 
             return fragment;
           }
@@ -476,10 +468,9 @@ const fetchData = async (timezone = userTimezone) => {
           console.error("data.f20_Detalles_Evento no es un objeto o es nulo.");
         }
 
-
       });
-
-  } catch (error) {
+       
+    } catch (error) {
     console.error("Error al conectar con la base de datos:", error);
   }
 };
@@ -542,48 +533,3 @@ searchInput.addEventListener('input', function() {
     evento.style.display = textoEvento.includes(searchTerm) ? 'block' : 'none';
   });
 });
-
-// const searchInput = document.getElementById('search-input');
-// searchInput.addEventListener('input', function() {
-//     const searchTerm = this.value.toLowerCase();
-//     const eventos = document.querySelectorAll('.evento');
-
-//     eventos.forEach(evento => {
-//         const textoEvento = evento.textContent.toLowerCase();
-//         if (textoEvento.includes(searchTerm)) {
-//             evento.style.display = 'block';
-//             evento.querySelectorAll('.detalle_evento').forEach(detalle => {
-//                 detalle.style.display = 'block';
-//             });
-//         } else {
-//             evento.style.display = 'none';
-//         }
-//     });
-// });
-
-// document.addEventListener("DOMContentLoaded", function () {
-//   const timezoneSelect = document.getElementById("timezone-select");
-//   const timezones = Intl.supportedValuesOf("timeZone");
-
-//   timezones.forEach(zone => {
-//       const option = document.createElement("option");
-//       option.value = zone;
-//       option.textContent = zone;
-//       timezoneSelect.appendChild(option);
-//   });
-
-//   timezoneSelect.value = Intl.DateTimeFormat().resolvedOptions().timeZone;
-// });
-
-// document.getElementById('timezone-select').addEventListener('change', (event) => {
-//   const timezone = event.target.value;
-//   ajustarHorasEventos(timezone);
-// });
-
-
-
-// const timezoneSelect = document.getElementById('timezone-select');
-// fetchData().then(() => {
-//   const selectedTimezone = timezoneSelect.value;
-//   ajustarHorasEventos(selectedTimezone);
-// });
