@@ -1,7 +1,7 @@
 {
-  "name": "HDport.es - Deportes en Vivo",
-  "short_name": "HDport",
-  "description": "Streaming en vivo de eventos deportivos",
+  "name": "HDport.es",
+  "short_name": "HDport.es",
+  "description": "Streaming de eventos deportivos",
   "start_url": "/",
   "display": "standalone",
   "theme_color": "#000000",

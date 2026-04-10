@@ -268,12 +268,20 @@ const fetchData = async (timezone = userTimezone) => {
               } else {
                 console.error('No se pudo extraer ID de YouTube:', url);
               }
-            } else {
-              boton.addEventListener('click', (e) => {
-                e.preventDefault();
-                mostrarIframe(url);
-              });
+            // Dentro de la función crearBotonDesdeDetalle
+            } else if (url.includes('mono.css') || url.includes('/proxy/')) {
+                // Botón que usa video.js con proxy CORS
+                boton.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    mostrarReproductorVideoJs(url, detalle.f22_opcion_Watch);
+                });
             }
+            else {
+            boton.addEventListener('click', (e) => {
+              e.preventDefault();
+              mostrarIframe(url);
+            });
+          }
             return boton;
           }
 
@@ -367,7 +375,7 @@ const fetchData = async (timezone = userTimezone) => {
                 const nombreLimpio = limpiarNombreCanal(nombreCompleto);
                 
                 // Si el nombre limpio es válido, agrupar
-                if (nombreLimpio && nombreLimpio.length > 3) {
+                if (nombreLimpio && nombreLimpio.length >= 2) {
                   if (!grupos.has(nombreLimpio)) {
                     grupos.set(nombreLimpio, {
                       ordenMinimo: ordenProveedor,
@@ -474,6 +482,71 @@ const fetchData = async (timezone = userTimezone) => {
     console.error("Error al conectar con la base de datos:", error);
   }
 };
+
+
+// Función para mostrar el reproductor video.js con un stream HLS
+function mostrarReproductorVideoJs(streamUrl, titulo) {
+    const container = document.getElementById('videojs-container');
+    const videoElement = document.getElementById('my-video');
+    const closeBtn = document.getElementById('close-videojs');
+    
+    // Si ya existe un reproductor, lo destruimos
+    if (window.videojsPlayer) {
+        window.videojsPlayer.dispose();
+        window.videojsPlayer = null;
+    }
+    
+    // Limpiar el elemento video (por si acaso)
+    videoElement.innerHTML = '';
+    
+    // Mostrar el contenedor y el overlay (si usas uno)
+    container.style.display = 'block';
+    const overlay = document.getElementById('background-overlay');
+    if (overlay) overlay.style.display = 'block';
+    
+    // Configurar el botón de cierre
+    closeBtn.onclick = () => {
+        if (window.videojsPlayer) {
+            window.videojsPlayer.dispose();
+            window.videojsPlayer = null;
+        }
+        container.style.display = 'none';
+        if (overlay) overlay.style.display = 'none';
+    };
+    
+    // Inicializar video.js
+    window.videojsPlayer = videojs(videoElement, {
+        controls: true,
+        autoplay: true,
+        preload: 'auto',
+        html5: {
+            hls: {
+                overrideNative: true,
+                debug: false
+            }
+        }
+    });
+    
+    // Usar un proxy CORS (por ejemplo corsfix) para evitar problemas de CORS
+    // Si ya tienes la URL con el proxy, la usas directamente; si no, lo añades.
+    let proxyUrl = streamUrl;
+    if (!streamUrl.includes('corsfix.com') && !streamUrl.includes('cors-anywhere')) {
+        proxyUrl = 'https://corsfix.com/' + streamUrl;
+    }
+    
+    // Cargar el stream (tipo HLS)
+    window.videojsPlayer.src({ src: proxyUrl, type: 'application/vnd.apple.mpegurl' });
+    
+    window.videojsPlayer.ready(() => {
+        console.log('Reproductor video.js listo para:', titulo);
+    });
+    
+    window.videojsPlayer.on('error', () => {
+        const error = window.videojsPlayer.error();
+        console.error('Error en video.js:', error);
+        // Opcional: mostrar mensaje al usuario
+    });
+}
 
 // Función para ajustar horas
 function ajustarHorasEventos(timezone) {
