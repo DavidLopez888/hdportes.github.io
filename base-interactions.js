@@ -9,6 +9,28 @@ AWS.config.update({
 // Crear una instancia de DynamoDB
 const dynamodb = new AWS.DynamoDB.DocumentClient();
 
+// Configura la URL base de tu Worker de Cloudflare
+const WORKER_URL = 'https://shrill-unit-d8c2.naitsirczepol.workers.dev';
+
+/**
+ * Convierte una URL original de livetv.sx en una URL que pasa por el proxy de Cloudflare
+ * @param {string} originalUrl - URL de la imagen (ej. https://livetv.sx/img/logo.png)
+ * @returns {string} URL del proxy, o la original si no es de livetv.sx
+ */
+function proxyImageUrl(originalUrl) {
+  if (!originalUrl) return null;
+  
+  // Si ya es una URL de nuestro propio dominio o del Worker, no la procesamos
+  if (originalUrl.includes(WORKER_URL) || originalUrl.includes('hdport.es')) {
+    return originalUrl;
+  }
+  
+  // Aplicar proxy a TODAS las URLs externas (no solo livetv)
+  // Esto asegura que cualquier imagen bloqueada por geolocalización se solucione
+  const proxied = `${WORKER_URL}/proxy/${encodeURIComponent(originalUrl)}`;
+  return proxied;
+}
+
 function extraerVideoIdDeYouTube(url) {
   const regex = /(?:embed\/|watch\?v=)([^?&]+)/;
   const match = url.match(regex);
@@ -94,7 +116,8 @@ const fetchData = async (timezone = userTimezone) => {
 
         if (data.f07_URL_Flag) {
           const banderaImg = document.createElement('img');
-          banderaImg.src = data.f07_URL_Flag;
+          // banderaImg.src = data.f07_URL_Flag;
+          banderaImg.src = proxyImageUrl(data.f07_URL_Flag);
           banderaImg.alt = 'Bandera';
           banderaImg.classList.add('bandera');
           infoEventoContainer.appendChild(banderaImg);
@@ -141,7 +164,8 @@ const fetchData = async (timezone = userTimezone) => {
 
           if (data.f09_logo_Local) {
             const logoLocalImg = document.createElement('img');
-            logoLocalImg.src = data.f09_logo_Local;
+            // logoLocalImg.src = data.f09_logo_Local;
+            logoLocalImg.src = proxyImageUrl(data.f09_logo_Local);
             logoLocalImg.alt = 'Logo Local';
             logoLocalImg.classList.add('logo-local');
             logoLocalImg.style.width = '80px';
@@ -154,7 +178,8 @@ const fetchData = async (timezone = userTimezone) => {
 
           if (data.f11_logo_Visita) {
             const logoVisitaImg = document.createElement('img');
-            logoVisitaImg.src = data.f11_logo_Visita;
+            // logoVisitaImg.src = data.f11_logo_Visita;
+            logoVisitaImg.src = proxyImageUrl(data.f11_logo_Visita);
             logoVisitaImg.alt = 'Logo Visita';
             logoVisitaImg.classList.add('logo-visita');
             logoVisitaImg.style.width = '80px';
@@ -429,7 +454,8 @@ const fetchData = async (timezone = userTimezone) => {
                 li.appendChild(document.createTextNode(' | '));
                 li.appendChild(imagenIdiom);
               } else if (primerDetalle.f21_imagen_Idiom) {
-                imagenIdiom.src = primerDetalle.f21_imagen_Idiom;
+                // imagenIdiom.src = primerDetalle.f21_imagen_Idiom;
+                imagenIdiom.src = proxyImageUrl(primerDetalle.f21_imagen_Idiom);
                 imagenIdiom.alt = 'Idiom';
                 imagenIdiom.classList.add('img-idom');
                 li.appendChild(document.createTextNode(' | '));
