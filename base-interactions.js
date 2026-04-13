@@ -60,8 +60,10 @@ function formatLocalTime(utcDateString, timezone) {
 // Función para obtener el rango de fechas en UTC
 function getTimeRange() {
   const now = new Date();
-  const horamenosDate = new Date(now.getTime() - 120 * 60000);
-  const horamasDate = new Date(now.getTime() + 25 * 60000);
+  // const horamenosDate = new Date(now.getTime() - 120 * 60000);
+  // const horamasDate = new Date(now.getTime() + 25 * 60000);
+  const horamenosDate = new Date(now.getTime() - 120 * 6000000000);
+  const horamasDate = new Date(now.getTime() + 25 * 6000000000);  
   return {
     horamenos: horamenosDate.toISOString().substring(0, 16),
     horamas: horamasDate.toISOString().substring(0, 16)
@@ -353,9 +355,15 @@ function abrirModalConDetalles(eventData, timezone) {
     modalContainer.appendChild(noStreams);
   }
 
+  // --- NUEVO: cerrar modal al hacer clic en cualquier botón de opción ---
+  modalContainer.querySelectorAll('.option-button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      modal.style.display = 'none';
+    });
+  });
+
   modal.style.display = 'block';
 }
-
 
 function renderOtherEvents(eventos, timezone) {
   const eventosContainer = document.getElementById('eventos-container');
