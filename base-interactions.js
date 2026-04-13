@@ -67,6 +67,506 @@ function getTimeRange() {
     horamas: horamasDate.toISOString().substring(0, 16)
   };
 }
+// === FUNCIONES AUXILIARES GLOBALES ===
+// Función para ajustar horas
+function ajustarHorasEventos(timezone) {
+  // Actualizar eventos antiguos
+  const eventos = document.querySelectorAll('.evento');
+  eventos.forEach((evento) => {
+    const horaElement = evento.querySelector('.hora-evento');
+    if (horaElement && horaElement.dataset.utc) {
+      const horaAjustada = formatLocalTime(horaElement.dataset.utc, timezone);
+      horaElement.textContent = horaAjustada;
+    }
+  });
+  // Actualizar nuevos eventos de sportsdb
+  const sportsdbTimes = document.querySelectorAll('.sportsdb-time');
+  sportsdbTimes.forEach((timeElement) => {
+    // Necesitamos obtener el dato UTC original. Para ello, podemos guardarlo en data-utc al crearlo.
+    // Pero actualmente no lo guardamos. Para simplificar, recargamos los datos al cambiar zona horaria.
+    // Como ya llamamos a fetchData en el evento change, no es necesario actualizar aquí.
+    // Sin embargo, si prefieres no recargar todo, tendrías que almacenar el UTC en cada .sportsdb-time.
+    // Por simplicidad, confiemos en que fetchData se llama de nuevo.
+  });
+}
+
+function mostrarIframe(url) {
+  const iframeContainer = document.getElementById('iframe-container');
+  const backgroundOverlay = document.getElementById('background-overlay');
+  const iframe = document.getElementById('detalle-iframe');
+  iframe.src = url;
+  iframeContainer.style.display = 'block';
+  backgroundOverlay.style.display = 'block';
+}
+
+function cerrarIframe() {
+  const iframeContainer = document.getElementById('iframe-container');
+  const backgroundOverlay = document.getElementById('background-overlay');
+  const iframe = document.getElementById('detalle-iframe');
+  iframeContainer.style.display = 'none';
+  backgroundOverlay.style.display = 'none';
+  iframe.src = '';
+}
+
+// --- Función que crea BOTÓN en lugar de enlace (misma lógica de eventos) ---
+function crearBotonDesdeDetalle(detalle, textoPersonalizado = null) {
+  const boton = document.createElement('button');
+  boton.textContent = textoPersonalizado || detalle.f23_text_Idiom || detalle.f22_opcion_Watch;
+  boton.classList.add('option-button');
+
+  const url = detalle.f24_url_Final;
+  if (!url) return boton;
+
+  if (url.includes("atptour")) {
+    boton.textContent = "ATP Tour";
+    boton.addEventListener('click', () => window.open(url, '_blank'));
+  } else if (url.includes("acestream")) {
+    boton.addEventListener('click', () => window.open(url, '_blank'));
+  } else if (url.includes("youtube.com")) {
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const videoId = extraerVideoIdDeYouTube(url);
+    if (videoId) {
+      if (isMobile) {
+        boton.addEventListener('click', () => window.open(`vnd.youtube://${videoId}`, '_blank'));
+      } else {
+        boton.addEventListener('click', (e) => {
+          e.preventDefault();
+          mostrarIframe(`https://www.youtube.com/embed/${videoId}?autoplay=1`);
+        });
+      }
+    } else {
+      console.error('No se pudo extraer ID de YouTube:', url);
+    }
+  // Dentro de la función crearBotonDesdeDetalle
+  } else if (url.includes('mono.css') || url.includes('/proxy/')) {
+      // Botón que usa video.js con proxy CORS
+      boton.addEventListener('click', (e) => {
+          e.preventDefault();
+          mostrarReproductorVideoJs(url, detalle.f22_opcion_Watch);
+      });
+  }
+  else {
+  boton.addEventListener('click', (e) => {
+    e.preventDefault();
+    mostrarIframe(url);
+  });
+}
+  return boton;
+}
+
+// Función para limpiar el nombre del canal (eliminar calidades, números, asteriscos)
+function limpiarNombreCanal(nombreCompleto) {
+  if (!nombreCompleto) return null;
+  let limpio = nombreCompleto
+    .replace(/\s*\d{3,4}p\s*/gi, ' ')      // elimina 1080p, 720p
+    .replace(/\s*FHD\s*/gi, ' ')
+    .replace(/\s*HD\s*/gi, ' ')
+    .replace(/\s*SD\s*/gi, ' ')
+    .replace(/\s*\*\s*/g, ' ')
+    .replace(/\s+\d+$/, '')                // elimina números al final
+    .replace(/\s+/g, ' ')                  // espacios múltiples a uno
+    .trim();
+  return limpio;
+}
+
+// --- Función para procesar una lista de detalles (web o ace) ---
+// --- Función para procesar una lista de detalles ---
+function procesarLista(detalles, tipo) {
+  const fragment = document.createDocumentFragment();
+
+  // Añadir cabecera con logos si hay elementos
+  if (detalles.length > 0) {
+    const header = document.createElement('div');
+    header.classList.add('options-group-header');
+    if (tipo === 'web') {
+      header.innerHTML = `
+        <span>⚡Canales Web – Mejor si usas :</span>
+        <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+          <div style="border: 1px solid rgba(75, 85, 99, 0.5); border-radius: 12px; padding: 5px 5px; background: rgba(0, 0, 0, 0.3); display: flex; align-items: center; gap: 8px;">
+            <a href="https://brave.com/download/" target="_blank" style="display: inline-block; line-height: 0;">
+              <img src="https://brave.com/static-assets/images/brave-logo-sans-text.svg" alt="Brave" class="rec-logo" style="height: 30px;">
+            </a>
+            <a href="https://laptop-updates.brave.com/download/BRV040?bitness=64" target="_blank" style="display: inline-block;">
+              <img src="https://i.postimg.cc/D0Px1wWJ/Microsoftstore.png" alt="Windows" class="rec-logo" style="height: 28px;">
+            </a>
+            <a href="https://play.google.com/store/apps/details?id=com.brave.browser" target="_blank" style="display: inline-block;">
+              <img src="https://i.postimg.cc/x836L1kH/androidstore.png" alt="Android" class="rec-logo" style="height: 28px;">
+            </a>
+            <a href="https://apps.apple.com/cl/app/brave-navegador-web-privado/id1052879175" target="_blank" style="display: inline-block;">
+              <img src="https://i.postimg.cc/K8z0gFmc/applestore.png" alt="iOS" class="rec-logo" style="height: 28px;">
+            </a>
+          </div>
+          <div style="border: 1px solid rgba(75, 85, 99, 0.5); border-radius: 12px; padding: 5px 5px; background: rgba(0, 0, 0, 0.3); display: flex; align-items: center; gap: 8px;">
+            <a href="https://www.torproject.org/download/" target="_blank" style="display: inline-block; line-height: 0;">
+              <img src="https://upload.wikimedia.org/wikipedia/commons/c/c9/Tor_Browser_icon.svg" alt="Tor Browser" class="rec-logo" style="height: 30px;">
+            </a>
+            <a href="https://www.torproject.org/dist/torbrowser/15.0.8/tor-browser-windows-x86_64-portable-15.0.8.exe" target="_blank" style="display: inline-block;">
+              <img src="https://i.postimg.cc/D0Px1wWJ/Microsoftstore.png" alt="Windows" class="rec-logo" style="height: 28px;">
+            </a>
+            <a href="https://www.torproject.org/download/#android" target="_blank" style="display: inline-block;">
+              <img src="https://i.postimg.cc/x836L1kH/androidstore.png" alt="Android" class="rec-logo" style="height: 28px;">
+            </a>
+            <a href="https://apps.apple.com/us/app/tor-browser-the-onion-vpn/id1144161643" target="_blank" style="display: inline-block;">
+              <img src="https://i.postimg.cc/K8z0gFmc/applestore.png" alt="iOS" class="rec-logo" style="height: 28px;">
+            </a>
+          </div>
+        </div>
+      `;
+  } else if (tipo === 'ace') {
+  header.innerHTML = `
+    <span>🎬Canales Acestream – Calidad superior en video – Necesitas :</span>
+    <div style="border: 1px solid rgba(75, 85, 99, 0.5); border-radius: 12px; padding: 5px 5px; background: rgba(0, 0, 0, 0.3); display: inline-flex; align-items: center; gap: 8px; margin-left: 10px;">
+      <a href="https://acestream.org/" target="_blank" style="display: inline-block; line-height: 0;">
+        <img src="./images/ace_logo.png" alt="Ace Stream" class="rec-logo rec-logo-ace" style="height: 35px;">
+      </a>
+      <a href="https://download.acestream.media/products/acestream-full/win/latest" target="_blank" style="display: inline-block;">
+        <img src="https://i.postimg.cc/D0Px1wWJ/Microsoftstore.png" alt="Windows" class="rec-logo rec-logo-ace" style="height: 28px;">
+      </a>
+      <a href="https://play.google.com/store/apps/details?id=org.acestream.node" target="_blank" style="display: inline-block;">
+        <img src="https://i.postimg.cc/x836L1kH/androidstore.png" alt="Android" class="rec-logo rec-logo-ace" style="height: 28px;">
+      </a>
+    </div>
+  `;
+  }
+  fragment.appendChild(header);
+    }
+
+
+  // --- LÓGICA DE AGRUPACIÓN: agrupa por nombre base ---
+  const grupos = new Map(); // clave: nombreBase, valor: { ordenMinimo, detalles }
+
+  detalles.forEach(detalle => {
+    if (!detalle.f22_opcion_Watch?.includes("sin_data")) {
+      const nombreCompleto = detalle.f23_text_Idiom || detalle.f22_opcion_Watch;
+      const ordenProveedor = detalle._orden_proveedor;
+      
+      // Limpiar el nombre para agrupar
+      const nombreLimpio = limpiarNombreCanal(nombreCompleto);
+      
+      // Si el nombre limpio es válido, agrupar
+      if (nombreLimpio && nombreLimpio.length >= 2) {
+        if (!grupos.has(nombreLimpio)) {
+          grupos.set(nombreLimpio, {
+            ordenMinimo: ordenProveedor,
+            detalles: []
+          });
+        }
+        const grupo = grupos.get(nombreLimpio);
+        grupo.detalles.push(detalle);
+        // Actualizar el orden mínimo del grupo
+        if (ordenProveedor < grupo.ordenMinimo) {
+          grupo.ordenMinimo = ordenProveedor;
+        }
+      }
+    }
+  });
+
+  // Convertir grupos a array y ordenar por ordenMinimo
+  const gruposArray = Array.from(grupos.entries()).map(([nombreBase, data]) => ({
+    nombreBase,
+    orden: data.ordenMinimo,
+    detalles: data.detalles
+  }));
+
+  // Ordenar grupos por orden (menor a mayor)
+  gruposArray.sort((a, b) => a.orden - b.orden);
+
+  // Procesar grupos
+  for (const { nombreBase, detalles: detallesGrupo } of gruposArray) {
+    const li = document.createElement('li');
+    li.classList.add('registro-detalle');
+
+    // Ordenar las opciones dentro del grupo por el número de opción
+    const detallesOrdenados = [...detallesGrupo].sort((a, b) => {
+      const nombreA = a.f23_text_Idiom || a.f22_opcion_Watch || '';
+      const nombreB = b.f23_text_Idiom || b.f22_opcion_Watch || '';
+      // Extraer número del final o de "OpX"
+      const numA = parseInt(nombreA.match(/(\d+)$/)?.[1] || nombreA.match(/Op(\d+)/)?.[1] || '0');
+      const numB = parseInt(nombreB.match(/(\d+)$/)?.[1] || nombreB.match(/Op(\d+)/)?.[1] || '0');
+      return numA - numB;
+    });
+
+    // Imagen del primer detalle - Siempre mostrar HD.png para Acestream y DLHD
+    const primerDetalle = detallesOrdenados[0];
+    const imagenIdiom = document.createElement('img');
+
+    // Para Acestream (tipo 'ace') o DLHD, mostrar HD.png
+    // if (tipo === 'ace' || primerDetalle.f25_proveedor?.includes("DLHD")) {
+    //   imagenIdiom.src = 'images/HD.png';
+    //   imagenIdiom.alt = 'HD';
+    //   imagenIdiom.classList.add('img-idom');
+    //   li.appendChild(document.createTextNode(' | '));
+    //   li.appendChild(imagenIdiom);
+    // } else 
+      if (primerDetalle.f21_imagen_Idiom) {
+      // imagenIdiom.src = primerDetalle.f21_imagen_Idiom;
+      imagenIdiom.src = proxyImageUrl(primerDetalle.f21_imagen_Idiom);
+      imagenIdiom.alt = 'Idiom';
+      imagenIdiom.classList.add('img-idom');
+      // li.appendChild(document.createTextNode(' | '));
+      li.appendChild(imagenIdiom);
+    }
+
+    // Nombre del canal
+    li.appendChild(document.createTextNode(` ${nombreBase}: `));
+
+    // Añadir botones con "Opc. 1", "Opc. 2", etc.
+    detallesOrdenados.forEach((detalle, index) => {
+      if (index > 0) li.appendChild(document.createTextNode(' | '));
+      const textoBoton = `Op. ${index + 1}`;
+      const boton = crearBotonDesdeDetalle(detalle, textoBoton);
+      li.appendChild(boton);
+    });
+
+    fragment.appendChild(li);
+  }
+
+  return fragment;
+}
+
+function abrirModalConDetalles(eventData, timezone) {
+  const modal = document.getElementById('sportsdb-modal');
+  const modalContainer = document.getElementById('modal-details-container');
+  if (!modal || !modalContainer) return;
+
+  modalContainer.innerHTML = '';
+
+  if (eventData.f20_Detalles_Evento && typeof eventData.f20_Detalles_Evento === 'object') {
+    const detallesOrdenados = [...eventData.f20_Detalles_Evento].sort((a,b) => (a._orden_proveedor||99) - (b._orden_proveedor||99));
+    const webDetails = detallesOrdenados.filter(d => [1,3,4,5].includes(d._orden_proveedor));
+    const aceDetails = detallesOrdenados.filter(d => [6,7,8,9].includes(d._orden_proveedor));
+    
+    const eventoDetalle = document.createElement('ul');
+    eventoDetalle.classList.add('detalle-evento');
+    
+    if (webDetails.length > 0) {
+      eventoDetalle.appendChild(procesarLista(webDetails, 'web'));
+    }
+    if (aceDetails.length > 0) {
+      eventoDetalle.appendChild(procesarLista(aceDetails, 'ace'));
+    }
+    modalContainer.appendChild(eventoDetalle);
+  } else {
+    const noStreams = document.createElement('p');
+    noStreams.textContent = 'No hay streams disponibles';
+    noStreams.style.color = '#ccc';
+    modalContainer.appendChild(noStreams);
+  }
+
+  modal.style.display = 'block';
+}
+
+
+function renderOtherEvents(eventos, timezone) {
+  const eventosContainer = document.getElementById('eventos-container');
+  const eventosContainerTOP = document.getElementById('eventos-container-top');
+  eventosContainer.innerHTML = '';
+  eventosContainerTOP.innerHTML = '';
+
+  eventos.forEach((data) => {
+    const horaUTC = data.f03_dia_event;
+    const horaAjustada = formatLocalTime(horaUTC, timezone);
+
+    const eventoDiv = document.createElement('div');
+    eventoDiv.classList.add('evento');
+
+    const eventoHeader = document.createElement('div');
+    eventoHeader.classList.add('evento-header');
+    eventoDiv.appendChild(eventoHeader);
+
+    const infoEventoContainer = document.createElement('div');
+    infoEventoContainer.classList.add('info-evento-container');
+
+    if (data.f07_URL_Flag) {
+      const banderaImg = document.createElement('img');
+      banderaImg.src = proxyImageUrl(data.f07_URL_Flag);
+      banderaImg.alt = 'Bandera';
+      banderaImg.classList.add('bandera');
+      infoEventoContainer.appendChild(banderaImg);
+    }
+
+    const categoryEvento = document.createElement('p');
+    categoryEvento.textContent = data.f05_event_categoria || '';
+    categoryEvento.classList.add('category-evento');
+    categoryEvento.style.marginLeft = '20px';
+    infoEventoContainer.appendChild(categoryEvento);
+    eventoHeader.appendChild(infoEventoContainer);
+
+    const textoImagenesContainer = document.createElement('div');
+    textoImagenesContainer.classList.add('texto-imagenes-container');
+
+    const textoEvento = document.createElement('p');
+    textoEvento.textContent = data.f06_name_event || '';
+    textoEvento.classList.add('texto-evento');
+    const textoEventoString = textoEvento.textContent;
+    const vsIndex = textoEventoString.toLowerCase().indexOf(' vs ');
+    
+    if (vsIndex !== -1) {
+      const textoEventoIzquierda_vs = textoEventoString.slice(0, vsIndex).trim();
+      const textoEventoDerecha_vs = textoEventoString.slice(vsIndex + 3).trim();
+
+      const textoEventoIzquierdaElement = document.createElement('p');
+      textoEventoIzquierdaElement.textContent = textoEventoIzquierda_vs;
+      textoEventoIzquierdaElement.classList.add('texto-evento-izquierda');
+      textoImagenesContainer.appendChild(textoEventoIzquierdaElement);
+
+      const horaEvento = document.createElement('p');
+      horaEvento.textContent = `${horaAjustada} `;
+      horaEvento.dataset.utc = horaUTC;
+      horaEvento.style.width = 'fit-content';
+      horaEvento.style.margin = 'auto';
+      horaEvento.classList.add('hora-evento');
+      textoImagenesContainer.appendChild(horaEvento);
+
+      const textoEventoDerechaElement = document.createElement('p');
+      textoEventoDerechaElement.textContent = textoEventoDerecha_vs;
+      textoEventoDerechaElement.classList.add('texto-evento-derecha');
+      textoImagenesContainer.appendChild(textoEventoDerechaElement);
+
+      if (data.f09_logo_Local) {
+        const logoLocalImg = document.createElement('img');
+        logoLocalImg.src = proxyImageUrl(data.f09_logo_Local);
+        logoLocalImg.alt = 'Logo Local';
+        logoLocalImg.classList.add('logo-local');
+        logoLocalImg.style.width = '80px';
+        logoLocalImg.style.height = 'auto';
+        logoLocalImg.style.marginRight = '10px';
+        logoLocalImg.classList.add('logo-evento-local');
+        textoImagenesContainer.appendChild(logoLocalImg);
+        textoImagenesContainer.insertBefore(logoLocalImg, textoEventoIzquierdaElement.nextSibling);
+      }
+
+      if (data.f11_logo_Visita) {
+        const logoVisitaImg = document.createElement('img');
+        logoVisitaImg.src = proxyImageUrl(data.f11_logo_Visita);
+        logoVisitaImg.alt = 'Logo Visita';
+        logoVisitaImg.classList.add('logo-visita');
+        logoVisitaImg.style.width = '80px';
+        logoVisitaImg.style.height = 'auto';
+        logoVisitaImg.style.marginLeft = '10px';
+        logoVisitaImg.classList.add('logo-evento-visita');
+        textoImagenesContainer.appendChild(logoVisitaImg);
+        textoImagenesContainer.insertBefore(logoVisitaImg, textoEventoDerechaElement);
+      }
+    } else {
+      const horaEvento = document.createElement('p');
+      horaEvento.textContent = `${horaAjustada} `;
+      horaEvento.dataset.utc = horaUTC;
+      horaEvento.style.width = 'fit-content';
+      horaEvento.style.margin = 'auto';
+      horaEvento.classList.add('hora-evento');
+      textoImagenesContainer.appendChild(horaEvento);
+      if (textoEvento.textContent.length > 26) {
+        categoryEvento.textContent += " | " + textoEvento.textContent;
+      } else {
+        textoEvento.classList.add('texto-evento-izquierda');
+        textoImagenesContainer.appendChild(textoEvento);
+      }
+    }
+    eventoHeader.appendChild(textoImagenesContainer);
+
+    // Evento click para mostrar/ocultar detalle
+    eventoHeader.addEventListener('click', () => {
+      const detalle = eventoDiv.querySelector('.detalle-evento-container');
+      if (detalle) {
+        detalle.style.display = detalle.style.display === 'none' ? 'block' : 'none';
+      }
+    });
+
+    // Crear contenedor de detalles (opciones de stream)
+    if (typeof data.f20_Detalles_Evento === 'object' && data.f20_Detalles_Evento !== null) {
+      const detallesOrdenados = [...data.f20_Detalles_Evento].sort((a, b) => (a._orden_proveedor || 99) - (b._orden_proveedor || 99));
+      
+      const detalleEventoContainer = document.createElement('div');
+      detalleEventoContainer.classList.add('detalle-evento-container');
+      detalleEventoContainer.style.display = 'none';
+
+      const webDetails = detallesOrdenados.filter(d => [1,3,4,5].includes(d._orden_proveedor));
+      const aceDetails = detallesOrdenados.filter(d => [6,7,8,9].includes(d._orden_proveedor));
+
+      const eventoDetalle = document.createElement('ul');
+      eventoDetalle.classList.add('detalle-evento');
+
+      if (webDetails.length > 0) {
+        eventoDetalle.appendChild(procesarLista(webDetails, 'web'));
+      }
+      if (aceDetails.length > 0) {
+        eventoDetalle.appendChild(procesarLista(aceDetails, 'ace'));
+      }
+
+      detalleEventoContainer.appendChild(eventoDetalle);
+      eventoDiv.appendChild(detalleEventoContainer);
+
+      const numDetalles = data.f20_Detalles_Evento.length;
+      if (numDetalles > 20) {
+        eventosContainerTOP.appendChild(eventoDiv);
+      } else {
+        eventosContainer.appendChild(eventoDiv);
+      }
+    } else {
+      console.error("data.f20_Detalles_Evento no es un objeto o es nulo.");
+      // Aún así agregamos el eventoDiv sin detalles
+      eventosContainer.appendChild(eventoDiv);
+    }
+  });
+}
+
+function renderSportsdbEvents(events, timezone) {
+  const container = document.getElementById('eventos-sportsdb-container');
+  if (!container) {
+    console.warn('No se encontró el contenedor #eventos-sportsdb-container');
+    return;
+  }
+  container.innerHTML = '';
+
+  events.forEach(event => {
+    const card = document.createElement('div');
+    card.classList.add('sportsdb-card');
+
+    const img = document.createElement('img');
+    img.src = proxyImageUrl(event.f07_URL_Flag);
+    img.alt = event.f05_event_categoria || 'Evento';
+    img.classList.add('sportsdb-img');
+    img.loading = 'lazy';
+
+    const infoDiv = document.createElement('div');
+    infoDiv.classList.add('sportsdb-info');
+
+    const categoryP = document.createElement('p');
+    categoryP.textContent = event.f05_event_categoria || '';
+    categoryP.classList.add('sportsdb-category');
+    infoDiv.appendChild(categoryP);
+
+    const rowDiv = document.createElement('div');
+    rowDiv.classList.add('sportsdb-row');
+
+    const timeLocal = formatLocalTime(event.f03_dia_event, timezone);
+    const timeP = document.createElement('span');
+    timeP.textContent = timeLocal;
+    timeP.classList.add('sportsdb-time');
+
+    const nameP = document.createElement('span');
+    nameP.textContent = event.f06_name_event || '';
+    nameP.classList.add('sportsdb-name');
+
+    rowDiv.appendChild(timeP);
+    rowDiv.appendChild(document.createTextNode(' - '));
+    rowDiv.appendChild(nameP);
+    infoDiv.appendChild(rowDiv);
+
+    card.appendChild(img);
+    card.appendChild(infoDiv);
+
+    // Click para abrir modal
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.option-button')) return;
+      abrirModalConDetalles(event, timezone);
+    });
+
+    container.appendChild(card);
+  });
+}
+
 
 
 const fetchData = async (timezone = userTimezone) => {
@@ -99,410 +599,25 @@ const fetchData = async (timezone = userTimezone) => {
         new Date(b.f03_dia_event) - new Date(a.f03_dia_event)
       ) || [];
 
-      eventosOrdenados.forEach((doc) => {
-        const data = doc;
-        const horaUTC = data.f03_dia_event;
-        const horaAjustada = formatLocalTime(horaUTC, timezone);
+      const sportsdbEvents = [];
+      const otherEvents = [];
 
-        const eventoDiv = document.createElement('div');
-        eventoDiv.classList.add('evento');
-
-        const eventoHeader = document.createElement('div');
-        eventoHeader.classList.add('evento-header');
-        eventoDiv.appendChild(eventoHeader);
-
-        const infoEventoContainer = document.createElement('div');
-        infoEventoContainer.classList.add('info-evento-container');
-
-        if (data.f07_URL_Flag) {
-          const banderaImg = document.createElement('img');
-          // banderaImg.src = data.f07_URL_Flag;
-          banderaImg.src = proxyImageUrl(data.f07_URL_Flag);
-          banderaImg.alt = 'Bandera';
-          banderaImg.classList.add('bandera');
-          infoEventoContainer.appendChild(banderaImg);
-        }
-
-        const categoryEvento = document.createElement('p');
-        categoryEvento.textContent = data.f05_event_categoria || '';
-        categoryEvento.classList.add('category-evento');
-        categoryEvento.style.marginLeft = '20px';
-        infoEventoContainer.appendChild(categoryEvento);
-
-        eventoHeader.appendChild(infoEventoContainer);
-
-        const textoImagenesContainer = document.createElement('div');
-        textoImagenesContainer.classList.add('texto-imagenes-container');
-
-        const textoEvento = document.createElement('p');
-        textoEvento.textContent = data.f06_name_event || '';
-        textoEvento.classList.add('texto-evento');
-        const textoEventoString = textoEvento.textContent;
-        const vsIndex = textoEventoString.toLowerCase().indexOf(' vs ');
-        
-        if (vsIndex !== -1) {
-          const textoEventoIzquierda_vs = textoEventoString.slice(0, vsIndex).trim();
-          const textoEventoDerecha_vs = textoEventoString.slice(vsIndex + 3).trim();
-
-          const textoEventoIzquierdaElement = document.createElement('p');
-          textoEventoIzquierdaElement.textContent = textoEventoIzquierda_vs;
-          textoEventoIzquierdaElement.classList.add('texto-evento-izquierda');
-          textoImagenesContainer.appendChild(textoEventoIzquierdaElement);
-
-          const horaEvento = document.createElement('p');
-          horaEvento.textContent = `${horaAjustada} `;
-          horaEvento.dataset.utc = horaUTC;
-          horaEvento.style.width = 'fit-content';
-          horaEvento.style.margin = 'auto';
-          horaEvento.classList.add('hora-evento');
-          textoImagenesContainer.appendChild(horaEvento);
-
-          const textoEventoDerechaElement = document.createElement('p');
-          textoEventoDerechaElement.textContent = textoEventoDerecha_vs;
-          textoEventoDerechaElement.classList.add('texto-evento-derecha');
-          textoImagenesContainer.appendChild(textoEventoDerechaElement);
-
-          if (data.f09_logo_Local) {
-            const logoLocalImg = document.createElement('img');
-            // logoLocalImg.src = data.f09_logo_Local;
-            logoLocalImg.src = proxyImageUrl(data.f09_logo_Local);
-            logoLocalImg.alt = 'Logo Local';
-            logoLocalImg.classList.add('logo-local');
-            logoLocalImg.style.width = '80px';
-            logoLocalImg.style.height = 'auto';
-            logoLocalImg.style.marginRight = '10px';
-            logoLocalImg.classList.add('logo-evento-local');
-            textoImagenesContainer.appendChild(logoLocalImg);
-            textoImagenesContainer.insertBefore(logoLocalImg, textoEventoIzquierdaElement.nextSibling);
-          }
-
-          if (data.f11_logo_Visita) {
-            const logoVisitaImg = document.createElement('img');
-            // logoVisitaImg.src = data.f11_logo_Visita;
-            logoVisitaImg.src = proxyImageUrl(data.f11_logo_Visita);
-            logoVisitaImg.alt = 'Logo Visita';
-            logoVisitaImg.classList.add('logo-visita');
-            logoVisitaImg.style.width = '80px';
-            logoVisitaImg.style.height = 'auto';
-            logoVisitaImg.style.marginLeft = '10px';
-            logoVisitaImg.classList.add('logo-evento-visita');
-            textoImagenesContainer.appendChild(logoVisitaImg);
-            textoImagenesContainer.insertBefore(logoVisitaImg, textoEventoDerechaElement);
-          }
+      eventosOrdenados.forEach(item => {
+        if (item.f07_URL_Flag && item.f07_URL_Flag.includes('thesportsdb.com')) {
+          sportsdbEvents.push(item);
         } else {
-          const horaEvento = document.createElement('p');
-          horaEvento.textContent = `${horaAjustada} `;
-          horaEvento.dataset.utc = horaUTC;
-          horaEvento.style.width = 'fit-content';
-          horaEvento.style.margin = 'auto';
-          horaEvento.classList.add('hora-evento');
-
-          textoImagenesContainer.appendChild(horaEvento);
-          if (textoEvento.textContent.length > 26) {
-            categoryEvento.textContent += " | " + textoEvento.textContent;
-          } else {
-            textoEvento.classList.add('texto-evento-izquierda');
-            textoImagenesContainer.appendChild(textoEvento);
-          }
+          otherEvents.push(item);
         }
-        eventoHeader.appendChild(textoImagenesContainer);
-
-        eventoHeader.addEventListener('click', () => {
-          const detalle = eventoDiv.querySelector('.detalle-evento-container');
-          if (detalle) {
-            detalle.style.display = detalle.style.display === 'none' ? 'block' : 'none';
-          }
-        });
-
-
-                        
-        if (typeof data.f20_Detalles_Evento === 'object' && data.f20_Detalles_Evento !== null) {
-          data.f20_Detalles_Evento.sort((a, b) => {
-            return (a._orden_proveedor || 99) - (b._orden_proveedor || 99);
-          });
-
-          const detalleEventoContainer = document.createElement('div');
-          detalleEventoContainer.classList.add('detalle-evento-container');
-          detalleEventoContainer.style.display = 'none';
-
-          const closeButton = document.getElementById('close-button');
-          const backgroundOverlay = document.getElementById('background-overlay');
-          const iframeContainer = document.getElementById('iframe-container');
-          const iframe = document.getElementById('detalle-iframe');
-
-          function cerrarIframe() {
-            iframeContainer.style.display = 'none';
-            backgroundOverlay.style.display = 'none';
-            iframe.src = '';
-          }
-          closeButton.addEventListener('click', cerrarIframe);
-
-          function mostrarIframe(url) {
-            iframe.src = url;
-            iframeContainer.style.display = 'block';
-            backgroundOverlay.style.display = 'block';
-          }
-
-          const eventoDetalle = document.createElement('ul');
-          eventoDetalle.classList.add('detalle-evento');
-
-          // --- Separar web (1,3,4,5) y acestream (6-10) para las cabeceras ---
-          const webDetails = data.f20_Detalles_Evento.filter(d => [1, 3, 4, 5].includes(d._orden_proveedor));
-          const aceDetails = data.f20_Detalles_Evento.filter(d => [6, 7, 8, 9].includes(d._orden_proveedor));
-
-          // --- Funciones auxiliares para obtener nombre base ---
-          function obtenerNombreBaseCanal(nombreCompleto) {
-            if (!nombreCompleto) return null;
-            const match = nombreCompleto.match(/^(.*?)(?:\s+\d+)?$/);
-            return match ? match[1].trim() : nombreCompleto;
-          }
-
-          function obtenerNombreBaseCanalAce(nombreCompleto) {
-            if (!nombreCompleto) return null;
-            // Elimina " Op1", " Op2", etc. al final (espacio + Op + número)
-            const match = nombreCompleto.match(/^(.*?)(?:\s+Op\d+)?$/);
-            return match ? match[1].trim() : nombreCompleto;
-          }
-
-          // --- Función que crea BOTÓN en lugar de enlace (misma lógica de eventos) ---
-          function crearBotonDesdeDetalle(detalle, textoPersonalizado = null) {
-            const boton = document.createElement('button');
-            boton.textContent = textoPersonalizado || detalle.f23_text_Idiom || detalle.f22_opcion_Watch;
-            boton.classList.add('option-button');
-
-            const url = detalle.f24_url_Final;
-            if (!url) return boton;
-
-            if (url.includes("atptour")) {
-              boton.textContent = "ATP Tour";
-              boton.addEventListener('click', () => window.open(url, '_blank'));
-            } else if (url.includes("acestream")) {
-              boton.addEventListener('click', () => window.open(url, '_blank'));
-            } else if (url.includes("youtube.com")) {
-              const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-              const videoId = extraerVideoIdDeYouTube(url);
-              if (videoId) {
-                if (isMobile) {
-                  boton.addEventListener('click', () => window.open(`vnd.youtube://${videoId}`, '_blank'));
-                } else {
-                  boton.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    mostrarIframe(`https://www.youtube.com/embed/${videoId}?autoplay=1`);
-                  });
-                }
-              } else {
-                console.error('No se pudo extraer ID de YouTube:', url);
-              }
-            // Dentro de la función crearBotonDesdeDetalle
-            } else if (url.includes('mono.css') || url.includes('/proxy/')) {
-                // Botón que usa video.js con proxy CORS
-                boton.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    mostrarReproductorVideoJs(url, detalle.f22_opcion_Watch);
-                });
-            }
-            else {
-            boton.addEventListener('click', (e) => {
-              e.preventDefault();
-              mostrarIframe(url);
-            });
-          }
-            return boton;
-          }
-
-          // --- Función para procesar una lista de detalles (web o ace) ---
-          // --- Función para procesar una lista de detalles ---
-          function procesarLista(detalles, tipo) {
-            const fragment = document.createDocumentFragment();
-
-            // Añadir cabecera con logos si hay elementos
-            if (detalles.length > 0) {
-              const header = document.createElement('div');
-              header.classList.add('options-group-header');
-              if (tipo === 'web') {
-                header.innerHTML = `
-                  <span>⚡Canales Web – Mejor si usas :</span>
-                  <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
-                    <div style="border: 1px solid rgba(75, 85, 99, 0.5); border-radius: 12px; padding: 5px 5px; background: rgba(0, 0, 0, 0.3); display: flex; align-items: center; gap: 8px;">
-                      <a href="https://brave.com/download/" target="_blank" style="display: inline-block; line-height: 0;">
-                        <img src="https://brave.com/static-assets/images/brave-logo-sans-text.svg" alt="Brave" class="rec-logo" style="height: 30px;">
-                      </a>
-                      <a href="https://laptop-updates.brave.com/download/BRV040?bitness=64" target="_blank" style="display: inline-block;">
-                        <img src="https://i.postimg.cc/D0Px1wWJ/Microsoftstore.png" alt="Windows" class="rec-logo" style="height: 28px;">
-                      </a>
-                      <a href="https://play.google.com/store/apps/details?id=com.brave.browser" target="_blank" style="display: inline-block;">
-                        <img src="https://i.postimg.cc/x836L1kH/androidstore.png" alt="Android" class="rec-logo" style="height: 28px;">
-                      </a>
-                      <a href="https://apps.apple.com/cl/app/brave-navegador-web-privado/id1052879175" target="_blank" style="display: inline-block;">
-                        <img src="https://i.postimg.cc/K8z0gFmc/applestore.png" alt="iOS" class="rec-logo" style="height: 28px;">
-                      </a>
-                    </div>
-                    <div style="border: 1px solid rgba(75, 85, 99, 0.5); border-radius: 12px; padding: 5px 5px; background: rgba(0, 0, 0, 0.3); display: flex; align-items: center; gap: 8px;">
-                      <a href="https://www.torproject.org/download/" target="_blank" style="display: inline-block; line-height: 0;">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/c/c9/Tor_Browser_icon.svg" alt="Tor Browser" class="rec-logo" style="height: 30px;">
-                      </a>
-                      <a href="https://www.torproject.org/dist/torbrowser/15.0.8/tor-browser-windows-x86_64-portable-15.0.8.exe" target="_blank" style="display: inline-block;">
-                        <img src="https://i.postimg.cc/D0Px1wWJ/Microsoftstore.png" alt="Windows" class="rec-logo" style="height: 28px;">
-                      </a>
-                      <a href="https://www.torproject.org/download/#android" target="_blank" style="display: inline-block;">
-                        <img src="https://i.postimg.cc/x836L1kH/androidstore.png" alt="Android" class="rec-logo" style="height: 28px;">
-                      </a>
-                      <a href="https://apps.apple.com/us/app/tor-browser-the-onion-vpn/id1144161643" target="_blank" style="display: inline-block;">
-                        <img src="https://i.postimg.cc/K8z0gFmc/applestore.png" alt="iOS" class="rec-logo" style="height: 28px;">
-                      </a>
-                    </div>
-                  </div>
-                `;
-            } else if (tipo === 'ace') {
-            header.innerHTML = `
-              <span>🎬Canales Acestream – Calidad superior en video – Necesitas :</span>
-              <div style="border: 1px solid rgba(75, 85, 99, 0.5); border-radius: 12px; padding: 5px 5px; background: rgba(0, 0, 0, 0.3); display: inline-flex; align-items: center; gap: 8px; margin-left: 10px;">
-                <a href="https://acestream.org/" target="_blank" style="display: inline-block; line-height: 0;">
-                  <img src="./images/ace_logo.png" alt="Ace Stream" class="rec-logo rec-logo-ace" style="height: 35px;">
-                </a>
-                <a href="https://download.acestream.media/products/acestream-full/win/latest" target="_blank" style="display: inline-block;">
-                  <img src="https://i.postimg.cc/D0Px1wWJ/Microsoftstore.png" alt="Windows" class="rec-logo rec-logo-ace" style="height: 28px;">
-                </a>
-                <a href="https://play.google.com/store/apps/details?id=org.acestream.node" target="_blank" style="display: inline-block;">
-                  <img src="https://i.postimg.cc/x836L1kH/androidstore.png" alt="Android" class="rec-logo rec-logo-ace" style="height: 28px;">
-                </a>
-              </div>
-            `;
-            }
-            fragment.appendChild(header);
-              }
-
-
-            // --- LÓGICA DE AGRUPACIÓN: agrupa por nombre base ---
-            const grupos = new Map(); // clave: nombreBase, valor: { ordenMinimo, detalles }
-
-            // Función para limpiar el nombre del canal (eliminar calidades, números, asteriscos)
-            function limpiarNombreCanal(nombreCompleto) {
-              if (!nombreCompleto) return null;
-              let limpio = nombreCompleto
-                .replace(/\s*\d{3,4}p\s*/gi, ' ')      // elimina 1080p, 720p
-                .replace(/\s*FHD\s*/gi, ' ')
-                .replace(/\s*HD\s*/gi, ' ')
-                .replace(/\s*SD\s*/gi, ' ')
-                .replace(/\s*\*\s*/g, ' ')
-                .replace(/\s+\d+$/, '')                // elimina números al final
-                .replace(/\s+/g, ' ')                  // espacios múltiples a uno
-                .trim();
-              return limpio;
-            }
-
-            detalles.forEach(detalle => {
-              if (!detalle.f22_opcion_Watch?.includes("sin_data")) {
-                const nombreCompleto = detalle.f23_text_Idiom || detalle.f22_opcion_Watch;
-                const ordenProveedor = detalle._orden_proveedor;
-                
-                // Limpiar el nombre para agrupar
-                const nombreLimpio = limpiarNombreCanal(nombreCompleto);
-                
-                // Si el nombre limpio es válido, agrupar
-                if (nombreLimpio && nombreLimpio.length >= 2) {
-                  if (!grupos.has(nombreLimpio)) {
-                    grupos.set(nombreLimpio, {
-                      ordenMinimo: ordenProveedor,
-                      detalles: []
-                    });
-                  }
-                  const grupo = grupos.get(nombreLimpio);
-                  grupo.detalles.push(detalle);
-                  // Actualizar el orden mínimo del grupo
-                  if (ordenProveedor < grupo.ordenMinimo) {
-                    grupo.ordenMinimo = ordenProveedor;
-                  }
-                }
-              }
-            });
-
-            // Convertir grupos a array y ordenar por ordenMinimo
-            const gruposArray = Array.from(grupos.entries()).map(([nombreBase, data]) => ({
-              nombreBase,
-              orden: data.ordenMinimo,
-              detalles: data.detalles
-            }));
-
-            // Ordenar grupos por orden (menor a mayor)
-            gruposArray.sort((a, b) => a.orden - b.orden);
-
-            // Procesar grupos
-            for (const { nombreBase, detalles: detallesGrupo } of gruposArray) {
-              const li = document.createElement('li');
-              li.classList.add('registro-detalle');
-
-              // Ordenar las opciones dentro del grupo por el número de opción
-              const detallesOrdenados = [...detallesGrupo].sort((a, b) => {
-                const nombreA = a.f23_text_Idiom || a.f22_opcion_Watch || '';
-                const nombreB = b.f23_text_Idiom || b.f22_opcion_Watch || '';
-                // Extraer número del final o de "OpX"
-                const numA = parseInt(nombreA.match(/(\d+)$/)?.[1] || nombreA.match(/Op(\d+)/)?.[1] || '0');
-                const numB = parseInt(nombreB.match(/(\d+)$/)?.[1] || nombreB.match(/Op(\d+)/)?.[1] || '0');
-                return numA - numB;
-              });
-
-              // Imagen del primer detalle - Siempre mostrar HD.png para Acestream y DLHD
-              const primerDetalle = detallesOrdenados[0];
-              const imagenIdiom = document.createElement('img');
-
-              // Para Acestream (tipo 'ace') o DLHD, mostrar HD.png
-              if (tipo === 'ace' || primerDetalle.f25_proveedor?.includes("DLHD")) {
-                imagenIdiom.src = 'images/HD.png';
-                imagenIdiom.alt = 'HD';
-                imagenIdiom.classList.add('img-idom');
-                li.appendChild(document.createTextNode(' | '));
-                li.appendChild(imagenIdiom);
-              } else if (primerDetalle.f21_imagen_Idiom) {
-                // imagenIdiom.src = primerDetalle.f21_imagen_Idiom;
-                imagenIdiom.src = proxyImageUrl(primerDetalle.f21_imagen_Idiom);
-                imagenIdiom.alt = 'Idiom';
-                imagenIdiom.classList.add('img-idom');
-                li.appendChild(document.createTextNode(' | '));
-                li.appendChild(imagenIdiom);
-              }
-
-              // Nombre del canal
-              li.appendChild(document.createTextNode(` ${nombreBase}: `));
-
-              // Añadir botones con "Opc. 1", "Opc. 2", etc.
-              detallesOrdenados.forEach((detalle, index) => {
-                if (index > 0) li.appendChild(document.createTextNode(' | '));
-                const textoBoton = `Op. ${index + 1}`;
-                const boton = crearBotonDesdeDetalle(detalle, textoBoton);
-                li.appendChild(boton);
-              });
-
-              fragment.appendChild(li);
-            }
-
-            return fragment;
-          }
-
-          // Procesar primero las opciones web (con su cabecera)
-          if (webDetails.length > 0) {
-            eventoDetalle.appendChild(procesarLista(webDetails, 'web'));
-          }
-          // Procesar las opciones acestream (con su cabecera)
-          if (aceDetails.length > 0) {
-            eventoDetalle.appendChild(procesarLista(aceDetails, 'ace'));
-          }
-
-          detalleEventoContainer.appendChild(eventoDetalle);
-          eventoDiv.appendChild(detalleEventoContainer);
-
-          const numDetalles = data.f20_Detalles_Evento.length;
-          if (numDetalles > 20) {
-            eventosContainerTOP.appendChild(eventoDiv);
-          } else {
-            eventosContainer.appendChild(eventoDiv);
-          }
-
-        } else {
-          console.error("data.f20_Detalles_Evento no es un objeto o es nulo.");
-        }
-
       });
+
+      // Renderizar eventos de thesportsdb.com en el nuevo grid (si hay)
+      if (sportsdbEvents.length > 0) {
+        renderSportsdbEvents(sportsdbEvents, timezone);
+      }
+
+      // Renderizar el resto de eventos con el layout original
+      renderOtherEvents(otherEvents, timezone);
+
        
     } catch (error) {
     console.error("Error al conectar con la base de datos:", error);
@@ -574,21 +689,6 @@ function mostrarReproductorVideoJs(streamUrl, titulo) {
     });
 }
 
-// Función para ajustar horas
-function ajustarHorasEventos(timezone) {
-  const eventos = document.querySelectorAll('.evento');
-
-  eventos.forEach((evento) => {
-    const horaElement = evento.querySelector('.hora-evento');
-    if (!horaElement || !horaElement.dataset.utc) {
-      console.warn('Elemento de hora no encontrado o sin data-utc');
-      return;
-    }
-
-    const horaAjustada = formatLocalTime(horaElement.dataset.utc, timezone);
-    horaElement.textContent = horaAjustada;
-  });
-}
 
 // Inicialización
 document.addEventListener('DOMContentLoaded', () => {
@@ -619,6 +719,43 @@ document.addEventListener('DOMContentLoaded', () => {
     // Luego recarga los datos para el nuevo rango horario
     fetchData(userTimezone);
   });
+
+  const closeButton = document.getElementById('close-button');
+  if (closeButton) {
+    closeButton.addEventListener('click', cerrarIframe);
+  }  
+
+  // Cambio de tema Light/Dark
+  const themeToggle = document.getElementById('theme-toggle');
+  const logoImg = document.querySelector('.logo-image-small');
+
+  if (themeToggle) {
+    themeToggle.addEventListener('click', () => {
+      document.body.classList.toggle('light-mode');
+      const isLight = document.body.classList.contains('light-mode');
+      themeToggle.textContent = isLight ? '🌙' : '☀️';
+      
+      // Cambiar el logo según el tema
+      if (logoImg) {
+        logoImg.src = isLight ? './images/HDeportesBanner_dark.png' : './images/HDeportesBanner.png';
+      }
+    });
+  }
+
+  // Cerrar modal al hacer clic en la X o fuera del contenido
+  // Configurar modal de sportsdb
+  const modal = document.getElementById('sportsdb-modal');
+  const closeSpan = document.querySelector('.modal-close');
+  if (modal && closeSpan) {
+    closeSpan.onclick = () => modal.style.display = 'none';
+    window.onclick = (event) => {
+      if (event.target == modal) modal.style.display = 'none';
+    };
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && modal.style.display === 'block') modal.style.display = 'none';
+    });
+  }
+
 });
 
 // Búsqueda

@@ -41,18 +41,39 @@
     <title>Streaming de Deportes en Vivo- HDport.es</title>
     <script src="./config.js"></script>
     <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1577.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/adblock-js/dist/adblock.js"></script>
-</head>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/adblock-js/dist/adblock.js"></script> -->
+
+    <!-- CSS de video.js -->
+    <link href="https://vjs.zencdn.net/8.16.1/video-js.css" rel="stylesheet" />
+
+    <!-- JS de video.js y su plugin HLS -->
+    <script src="https://vjs.zencdn.net/8.16.1/video.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@videojs/http-streaming@3.15.0/dist/videojs-http-streaming.min.js"></script>
+
+ </head>
 <body>
-    <!-- <h1>Streaming de Deportes en Vivo</h1> -->
-    <!-- Contenedor para mostrar los eventos -->
-    <div id="logo-container">
-        <img src="./images/HDeportesBanner.png" alt="Banner de HDport.es - Streaming de Deportes en Vivo" class="banner-image">
+    <!-- Barra superior con logo y buscador -->
+    <div id="top-bar">
+        <div id="logo-container">
+            <img src="./images/HDeportesBanner.png" alt="HDport.es" class="logo-image-small">
+        </div>
+        <div id="search-container">
+            <input type="text" id="search-input" placeholder="Buscar eventos...">
+        </div>
     </div>
 
-    <div id="search-container">
-        <input type="text" id="search-input" placeholder="Buscar eventos...">
+    <!-- Botón de tema arriba a la derecha -->
+    <div id="theme-toggle-container">
+        <button id="theme-toggle" class="theme-toggle-btn">☀️</button>
     </div>
+
+    <div id="eventos-sportsdb-container" class="sportsdb-grid"></div>
+
+    <!-- Contenedor del reproductor video.js (similar al iframe-container) -->
+    <div id="videojs-container" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: black; z-index: 10000;">
+        <video id="my-video" class="video-js vjs-default-skin" controls preload="auto" style="width: 100%; height: 100%;"></video>
+        <button id="close-videojs" style="position: absolute; top: 10px; right: 10px; z-index: 10001; background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 20px; cursor: pointer;">X</button>
+    </div>    
 
     <div id="eventos-container-top"> </div>
     <div id="eventos-container"> </div>
@@ -66,7 +87,16 @@
                 allow="autoplay; encrypted-media">
         </iframe>
         <button id="close-button">X</button>
+    </div> 
+
+    <!-- Modal para detalles de SportsDB -->
+    <div id="sportsdb-modal" class="modal">
+    <div class="modal-content">
+        <span class="modal-close">&times;</span>
+        <div id="modal-details-container"></div>
     </div>
+    </div>
+
     <script type="module" src="./base-interactions.js?v=1"></script>
 </body>
 
