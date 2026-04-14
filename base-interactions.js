@@ -558,7 +558,7 @@ function renderSportsdbEvents(events, timezone) {
     nameP.classList.add('sportsdb-name');
 
     rowDiv.appendChild(timeP);
-    rowDiv.appendChild(document.createTextNode(' - '));
+    // rowDiv.appendChild(document.createTextNode(' - '));
     rowDiv.appendChild(nameP);
     infoDiv.appendChild(rowDiv);
 
