@@ -62,8 +62,8 @@ function getTimeRange() {
   const now = new Date();
   // const horamenosDate = new Date(now.getTime() - 120 * 60000);
   // const horamasDate = new Date(now.getTime() + 25 * 60000);
-  const horamenosDate = new Date(now.getTime() - 120 * 6000000000);
-  const horamasDate = new Date(now.getTime() + 25 * 6000000000);  
+  const horamenosDate = new Date(now.getTime() - 120 * 60000);
+  const horamasDate = new Date(now.getTime() + 25 * 60000);  
   return {
     horamenos: horamenosDate.toISOString().substring(0, 16),
     horamas: horamasDate.toISOString().substring(0, 16)
@@ -579,54 +579,56 @@ function renderSportsdbEvents(events, timezone) {
 
 const fetchData = async (timezone = userTimezone) => {
   try {
-    const { horamenos, horamas } = getTimeRange();
-
-    const params = {
-      TableName: 'eventos',
-      FilterExpression: 'attribute_exists(f20_Detalles_Evento) AND ((#f03_dia_event BETWEEN :horamenos AND :horamas) OR (contains(#proveedor, :proveedor)))',
-      ExpressionAttributeNames: {
-        '#f03_dia_event': 'f03_dia_event',
-        '#proveedor': 'f02_proveedor'
-      },
-      ExpressionAttributeValues: {
-        ':horamenos': horamenos,
-        ':horamas': horamas,
-        ':proveedor': 'LiveTV'
-      }
-    };
+      // Consulta sin filtro de hora (trae todos los eventos con detalles)
+      const params = {
+        TableName: 'eventos',
+        FilterExpression: 'attribute_exists(f20_Detalles_Evento)'
+      };
 
       const result = await dynamodb.scan(params).promise();
+
+      // Limpiar contenedores
       const eventosContainer = document.getElementById('eventos-container');
       const eventosContainerTOP = document.getElementById('eventos-container-top');
       eventosContainer.innerHTML = '';
       eventosContainerTOP.innerHTML = '';
 
+      // Ordenar todos los eventos por fecha (más reciente primero)
       const eventosOrdenados = result.Items?.filter(item =>
         typeof item.f03_dia_event === 'string'
       ).sort((a, b) =>
         new Date(b.f03_dia_event) - new Date(a.f03_dia_event)
       ) || [];
 
+      // Calcular rango de hora actual (para filtrar eventos normales)
+      const { horamenos, horamas } = getTimeRange();
+
       const sportsdbEvents = [];
       const otherEvents = [];
 
       eventosOrdenados.forEach(item => {
-        if (item.f07_URL_Flag && item.f07_URL_Flag.includes('thesportsdb.com')) {
+        const isSportsdb = item.f07_URL_Flag && item.f07_URL_Flag.includes('thesportsdb.com');
+        
+        if (isSportsdb) {
+          // Excluir solo si el proveedor es exactamente "Bases"
+          if (item.f02_proveedor === 'Bases') return;
           sportsdbEvents.push(item);
         } else {
-          otherEvents.push(item);
+          // Para eventos normales: filtro de hora o LiveTV
+          const inTimeRange = item.f03_dia_event >= horamenos && item.f03_dia_event <= horamas;
+          const isLiveTV = item.f02_proveedor && item.f02_proveedor.includes('LiveTV');
+          if (inTimeRange || isLiveTV) {
+            otherEvents.push(item);
+          }
         }
       });
 
-      // Renderizar eventos de thesportsdb.com en el nuevo grid (si hay)
+      // Renderizar
       if (sportsdbEvents.length > 0) {
         renderSportsdbEvents(sportsdbEvents, timezone);
       }
-
-      // Renderizar el resto de eventos con el layout original
       renderOtherEvents(otherEvents, timezone);
 
-       
     } catch (error) {
     console.error("Error al conectar con la base de datos:", error);
   }
@@ -767,13 +769,24 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Búsqueda
+// Búsqueda (filtra tanto eventos antiguos como tarjetas sportsdb)
 const searchInput = document.getElementById('search-input');
-searchInput.addEventListener('input', function() {
-  const searchTerm = this.value.toLowerCase();
-  const eventos = document.querySelectorAll('.evento');
-
-  eventos.forEach(evento => {
-    const textoEvento = evento.textContent.toLowerCase();
-    evento.style.display = textoEvento.includes(searchTerm) ? 'block' : 'none';
+if (searchInput) {
+  searchInput.addEventListener('input', function() {
+    const searchTerm = this.value.toLowerCase();
+    
+    // Filtrar eventos antiguos (clase .evento)
+    const eventos = document.querySelectorAll('.evento');
+    eventos.forEach(evento => {
+      const textoEvento = evento.textContent.toLowerCase();
+      evento.style.display = textoEvento.includes(searchTerm) ? 'block' : 'none';
+    });
+    
+    // Filtrar tarjetas sportsdb (clase .sportsdb-card)
+    const cards = document.querySelectorAll('.sportsdb-card');
+    cards.forEach(card => {
+      const textoCard = card.textContent.toLowerCase();
+      card.style.display = textoCard.includes(searchTerm) ? 'block' : 'none';
+    });
   });
-});
+}
