@@ -623,6 +623,13 @@ const fetchData = async (timezone = userTimezone) => {
         }
       });
 
+      // Ordenar sportsdbEvents por número de detalles (de mayor a menor)
+      sportsdbEvents.sort((a, b) => {
+        const lenA = a.f20_Detalles_Evento ? a.f20_Detalles_Evento.length : 0;
+        const lenB = b.f20_Detalles_Evento ? b.f20_Detalles_Evento.length : 0;
+        return lenB - lenA;
+      });      
+
       // Renderizar
       if (sportsdbEvents.length > 0) {
         renderSportsdbEvents(sportsdbEvents, timezone);
