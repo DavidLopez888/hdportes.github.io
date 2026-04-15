@@ -212,7 +212,7 @@ function procesarLista(detalles, tipo) {
             <a href="https://www.torproject.org/download/" target="_blank" style="display: inline-block; line-height: 0;">
               <img src="https://upload.wikimedia.org/wikipedia/commons/c/c9/Tor_Browser_icon.svg" alt="Tor Browser" class="rec-logo" style="height: 30px;">
             </a>
-            <a href="https://www.torproject.org/dist/torbrowser/15.0.8/tor-browser-windows-x86_64-portable-15.0.8.exe" target="_blank" style="display: inline-block;">
+            <a href="https://www.torproject.org/dist/torbrowser/15.0.9/tor-browser-windows-x86_64-portable-15.0.9.exe" target="_blank" style="display: inline-block;">
               <img src="https://i.postimg.cc/D0Px1wWJ/Microsoftstore.png" alt="Windows" class="rec-logo" style="height: 28px;">
             </a>
             <a href="https://www.torproject.org/download/#android" target="_blank" style="display: inline-block;">
@@ -661,7 +661,7 @@ function generarGridCanales(eventData, modalGridContainer, modalPlayerContainer,
             <a href="https://www.torproject.org/download/" target="_blank" style="display: inline-block; line-height: 0;">
               <img src="https://upload.wikimedia.org/wikipedia/commons/c/c9/Tor_Browser_icon.svg" alt="Tor Browser" class="rec-logo" style="height: 30px;">
             </a>
-            <a href="https://www.torproject.org/dist/torbrowser/15.0.8/tor-browser-windows-x86_64-portable-15.0.8.exe" target="_blank" style="display: inline-block;">
+            <a href="https://www.torproject.org/dist/torbrowser/15.0.9/tor-browser-windows-x86_64-portable-15.0.9.exe" target="_blank" style="display: inline-block;">
               <img src="https://i.postimg.cc/D0Px1wWJ/Microsoftstore.png" alt="Windows" class="rec-logo" style="height: 28px;">
             </a>
             <a href="https://www.torproject.org/download/#android" target="_blank" style="display: inline-block;">
