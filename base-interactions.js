@@ -626,7 +626,7 @@ function generarGridCanales(eventData, modalGridContainer, modalPlayerContainer,
     header.classList.add('options-group-header');
     if (tipo === 'ace') {
       header.innerHTML = `
-        <span>🎬 Canales Acestream – Calidad superior en video – Necesitas :</span>
+        <span>🎬 Canales Ace Stream – Calidad FHD – Necesitas :</span>
         <div style="border: 1px solid rgba(75, 85, 99, 0.5); border-radius: 12px; padding: 5px 5px; background: rgba(0, 0, 0, 0.3); display: inline-flex; align-items: center; gap: 8px; margin-left: 10px;">
           <a href="https://acestream.org/" target="_blank" style="display: inline-block; line-height: 0;">
             <img src="./images/ace_logo.png" alt="Ace Stream" class="rec-logo rec-logo-ace" style="height: 35px;">
@@ -641,7 +641,7 @@ function generarGridCanales(eventData, modalGridContainer, modalPlayerContainer,
       `;
     } else if (tipo === 'web') {
       header.innerHTML = `
-        <span>⚡ Canales Web – Mejor si usas :</span>
+        <span>⚡ Canales Web – Mejor experiencia si usas :</span>
         <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
           <div style="border: 1px solid rgba(75, 85, 99, 0.5); border-radius: 12px; padding: 5px 5px; background: rgba(0, 0, 0, 0.3); display: flex; align-items: center; gap: 8px;">
             <a href="https://brave.com/download/" target="_blank" style="display: inline-block; line-height: 0;">
