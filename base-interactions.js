@@ -92,6 +92,16 @@ function ajustarHorasEventos(timezone) {
   });
 }
 
+function limpiarUrlImagen(url) {
+  if (!url) return null;
+  // Si termina en "/tiny", reemplazar por "/medium" o eliminar
+  if (url.endsWith('/tiny')) {
+    return url.replace('/tiny', '');
+  }
+  // También podría contener "/tiny/" en medio
+  return url.replace(/\/tiny\//, '');
+}
+
 function mostrarIframe(url) {
   const iframeContainer = document.getElementById('iframe-container');
   const backgroundOverlay = document.getElementById('background-overlay');
@@ -231,7 +241,7 @@ function procesarLista(detalles, tipo) {
   `;
   }
   fragment.appendChild(header);
-    }
+  }
 
 
   // --- LÓGICA DE AGRUPACIÓN: agrupa por nombre base ---
@@ -328,39 +338,35 @@ function procesarLista(detalles, tipo) {
 
 function abrirModalConDetalles(eventData, timezone) {
   const modal = document.getElementById('sportsdb-modal');
-  const modalContainer = document.getElementById('modal-details-container');
-  if (!modal || !modalContainer) return;
+  const gridContainer = document.getElementById('modal-grid-container');
+  const playerContainer = document.getElementById('modal-player-container');
+  const iframe = document.getElementById('modal-iframe');
+  const optionsContainer = document.getElementById('player-options');
+  const backButton = document.getElementById('back-to-grid');
 
-  modalContainer.innerHTML = '';
+  const aceContainer = document.getElementById('ace-options-container');
+  if (aceContainer) aceContainer.style.display = 'none';  
 
-  if (eventData.f20_Detalles_Evento && typeof eventData.f20_Detalles_Evento === 'object') {
-    const detallesOrdenados = [...eventData.f20_Detalles_Evento].sort((a,b) => (a._orden_proveedor||99) - (b._orden_proveedor||99));
-    const webDetails = detallesOrdenados.filter(d => [1,3,4,5].includes(d._orden_proveedor));
-    const aceDetails = detallesOrdenados.filter(d => [6,7,8,9].includes(d._orden_proveedor));
-    
-    const eventoDetalle = document.createElement('ul');
-    eventoDetalle.classList.add('detalle-evento');
-    
-    if (webDetails.length > 0) {
-      eventoDetalle.appendChild(procesarLista(webDetails, 'web'));
-    }
-    if (aceDetails.length > 0) {
-      eventoDetalle.appendChild(procesarLista(aceDetails, 'ace'));
-    }
-    modalContainer.appendChild(eventoDetalle);
-  } else {
-    const noStreams = document.createElement('p');
-    noStreams.textContent = 'No hay streams disponibles';
-    noStreams.style.color = '#ccc';
-    modalContainer.appendChild(noStreams);
-  }
+  if (!modal || !gridContainer || !playerContainer) return;
 
-  // --- NUEVO: cerrar modal al hacer clic en cualquier botón de opción ---
-  modalContainer.querySelectorAll('.option-button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      modal.style.display = 'none';
+  // Mostrar grid, ocultar player
+  gridContainer.style.display = 'grid';
+  playerContainer.style.display = 'none';
+  if (iframe) iframe.src = '';
+
+  // Generar el grid de canales (cards)
+  generarGridCanales(eventData, gridContainer, playerContainer, backButton, iframe, optionsContainer);
+
+  // Configurar el botón "Volver" (evitar duplicados)
+  if (backButton) {
+    const newBack = backButton.cloneNode(true);
+    backButton.parentNode.replaceChild(newBack, backButton);
+    newBack.addEventListener('click', () => {
+      gridContainer.style.display = 'grid';
+      playerContainer.style.display = 'none';
+      if (iframe) iframe.src = '';
     });
-  });
+  }
 
   modal.style.display = 'block';
 }
@@ -575,6 +581,267 @@ function renderSportsdbEvents(events, timezone) {
   });
 }
 
+function generarGridCanales(eventData, modalGridContainer, modalPlayerContainer, backButton, iframe, optionsContainer) {
+  const detalles = eventData.f20_Detalles_Evento;
+  if (!detalles || !Array.isArray(detalles)) return;
+
+  // Separar Acestream (orden 6,7,8,9) y Web (1,3,4,5)
+  const aceDetails = detalles.filter(d => [6,7,8,9].includes(d._orden_proveedor));
+  const webDetails = detalles.filter(d => [1,3,4,5].includes(d._orden_proveedor));
+
+  // Limpiar contenedor principal
+  modalGridContainer.innerHTML = '';
+
+  // Función auxiliar para crear una sección (encabezado + grid de cards)
+  function crearSeccion(detallesGrupo, tipo) {
+    if (!detallesGrupo.length) return null;
+
+    // Agrupar por nombre base (misma lógica que antes)
+    const grupos = new Map();
+    detallesGrupo.forEach(detalle => {
+      if (detalle.f22_opcion_Watch?.includes("sin_data")) return;
+      const nombreCompleto = detalle.f23_text_Idiom || detalle.f22_opcion_Watch;
+      const nombreLimpio = limpiarNombreCanal(nombreCompleto);
+      if (!nombreLimpio || nombreLimpio.length < 2) return;
+      if (!grupos.has(nombreLimpio)) {
+        grupos.set(nombreLimpio, []);
+      }
+      grupos.get(nombreLimpio).push(detalle);
+    });
+
+    if (grupos.size === 0) return null;
+
+    // Ordenar grupos por orden mínimo de _orden_proveedor
+    const gruposArray = Array.from(grupos.entries()).map(([nombre, detallesArr]) => {
+      const ordenMin = Math.min(...detallesArr.map(d => d._orden_proveedor || 99));
+      return { nombre, detalles: detallesArr, orden: ordenMin };
+    }).sort((a,b) => a.orden - b.orden);
+
+    // Crear contenedor de la sección
+    const section = document.createElement('div');
+    section.classList.add('channels-section');
+
+    // Crear encabezado (reutilizando el HTML de procesarLista)
+    const header = document.createElement('div');
+    header.classList.add('options-group-header');
+    if (tipo === 'ace') {
+      header.innerHTML = `
+        <span>🎬 Canales Acestream – Calidad superior en video – Necesitas :</span>
+        <div style="border: 1px solid rgba(75, 85, 99, 0.5); border-radius: 12px; padding: 5px 5px; background: rgba(0, 0, 0, 0.3); display: inline-flex; align-items: center; gap: 8px; margin-left: 10px;">
+          <a href="https://acestream.org/" target="_blank" style="display: inline-block; line-height: 0;">
+            <img src="./images/ace_logo.png" alt="Ace Stream" class="rec-logo rec-logo-ace" style="height: 35px;">
+          </a>
+          <a href="https://download.acestream.media/products/acestream-full/win/latest" target="_blank" style="display: inline-block;">
+            <img src="https://i.postimg.cc/D0Px1wWJ/Microsoftstore.png" alt="Windows" class="rec-logo" style="height: 28px;">
+          </a>
+          <a href="https://play.google.com/store/apps/details?id=org.acestream.node" target="_blank" style="display: inline-block;">
+            <img src="https://i.postimg.cc/x836L1kH/androidstore.png" alt="Android" class="rec-logo" style="height: 28px;">
+          </a>
+        </div>
+      `;
+    } else if (tipo === 'web') {
+      header.innerHTML = `
+        <span>⚡ Canales Web – Mejor si usas :</span>
+        <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+          <div style="border: 1px solid rgba(75, 85, 99, 0.5); border-radius: 12px; padding: 5px 5px; background: rgba(0, 0, 0, 0.3); display: flex; align-items: center; gap: 8px;">
+            <a href="https://brave.com/download/" target="_blank" style="display: inline-block; line-height: 0;">
+              <img src="https://brave.com/static-assets/images/brave-logo-sans-text.svg" alt="Brave" class="rec-logo" style="height: 30px;">
+            </a>
+            <a href="https://laptop-updates.brave.com/download/BRV040?bitness=64" target="_blank" style="display: inline-block;">
+              <img src="https://i.postimg.cc/D0Px1wWJ/Microsoftstore.png" alt="Windows" class="rec-logo" style="height: 28px;">
+            </a>
+            <a href="https://play.google.com/store/apps/details?id=com.brave.browser" target="_blank" style="display: inline-block;">
+              <img src="https://i.postimg.cc/x836L1kH/androidstore.png" alt="Android" class="rec-logo" style="height: 28px;">
+            </a>
+            <a href="https://apps.apple.com/cl/app/brave-navegador-web-privado/id1052879175" target="_blank" style="display: inline-block;">
+              <img src="https://i.postimg.cc/K8z0gFmc/applestore.png" alt="iOS" class="rec-logo" style="height: 28px;">
+            </a>
+          </div>
+          <div style="border: 1px solid rgba(75, 85, 99, 0.5); border-radius: 12px; padding: 5px 5px; background: rgba(0, 0, 0, 0.3); display: flex; align-items: center; gap: 8px;">
+            <a href="https://www.torproject.org/download/" target="_blank" style="display: inline-block; line-height: 0;">
+              <img src="https://upload.wikimedia.org/wikipedia/commons/c/c9/Tor_Browser_icon.svg" alt="Tor Browser" class="rec-logo" style="height: 30px;">
+            </a>
+            <a href="https://www.torproject.org/dist/torbrowser/15.0.8/tor-browser-windows-x86_64-portable-15.0.8.exe" target="_blank" style="display: inline-block;">
+              <img src="https://i.postimg.cc/D0Px1wWJ/Microsoftstore.png" alt="Windows" class="rec-logo" style="height: 28px;">
+            </a>
+            <a href="https://www.torproject.org/download/#android" target="_blank" style="display: inline-block;">
+              <img src="https://i.postimg.cc/x836L1kH/androidstore.png" alt="Android" class="rec-logo" style="height: 28px;">
+            </a>
+            <a href="https://apps.apple.com/us/app/tor-browser-the-onion-vpn/id1144161643" target="_blank" style="display: inline-block;">
+              <img src="https://i.postimg.cc/K8z0gFmc/applestore.png" alt="iOS" class="rec-logo" style="height: 28px;">
+            </a>
+          </div>
+        </div>
+      `;
+    }
+    section.appendChild(header);
+
+    // Crear grid para las cards
+    const grid = document.createElement('div');
+    grid.classList.add('channels-grid'); // usa la clase CSS que ya tiene 8 columnas
+
+    gruposArray.forEach(grupo => {
+      const { nombre, detalles: detallesGrupo } = grupo;
+      const detallesOrdenados = [...detallesGrupo].sort((a,b) => {
+        const numA = parseInt((a.f22_opcion_Watch || '').match(/(\d+)$/)?.[1] || '0');
+        const numB = parseInt((b.f22_opcion_Watch || '').match(/(\d+)$/)?.[1] || '0');
+        return numA - numB;
+      });
+
+      const card = document.createElement('div');
+      card.classList.add('channel-card');
+
+      const imgUrl = detallesOrdenados[0].f21_imagen_Idiom;
+      if (imgUrl) {
+        // Con imagen: mostrar solo la imagen y tooltip
+        const cleanUrl = limpiarUrlImagen(imgUrl);
+        const img = document.createElement('img');
+        img.src = proxyImageUrl(cleanUrl);
+        img.alt = nombre;
+        img.classList.add('channel-logo');
+        card.appendChild(img);
+        card.title = nombre;   // tooltip nativo
+      } else {
+        // Sin imagen: mostrar el nombre centrado
+        const nameSpan = document.createElement('div');
+        nameSpan.textContent = nombre;
+        nameSpan.classList.add('channel-name');
+        card.appendChild(nameSpan);
+      }
+
+      card.addEventListener('click', () => {
+        if (tipo === 'ace') {
+          // Para Acestream
+          if (detallesOrdenados.length === 1) {
+            // Solo una opción: abrir directamente y cerrar modal
+            const url = detallesOrdenados[0].f24_url_Final;
+            window.open(url, '_blank');
+            // document.getElementById('sportsdb-modal').style.display = 'none';
+          } else {
+            // Múltiples opciones: mostrar el grid de opciones
+            mostrarOpcionesAcestream(nombre, detallesOrdenados, modalGridContainer, modalPlayerContainer, iframe, optionsContainer);
+          }
+        } else {
+          // Para Web (y otros) mantener el comportamiento actual
+          mostrarReproductorConOpciones(nombre, detallesOrdenados, modalGridContainer, modalPlayerContainer, iframe, optionsContainer);
+        }
+      });
+
+      grid.appendChild(card);
+    });
+
+    section.appendChild(grid);
+    return section;
+  }
+
+  // Agregar primero la sección Acestream, luego Web
+  const aceSection = crearSeccion(aceDetails, 'ace');
+  if (aceSection) modalGridContainer.appendChild(aceSection);
+  const webSection = crearSeccion(webDetails, 'web');
+  if (webSection) modalGridContainer.appendChild(webSection);
+
+  if (!aceSection && !webSection) {
+    const noStreams = document.createElement('p');
+    noStreams.textContent = 'No hay streams disponibles';
+    noStreams.style.color = '#ccc';
+    modalGridContainer.appendChild(noStreams);
+  }
+}
+
+function mostrarOpcionesAcestream(nombreCanal, detallesOrdenados, gridContainer, playerContainer, iframe, optionsContainer) {
+  // Ocultar grid principal y reproductor (por si acaso)
+  gridContainer.style.display = 'none';
+  playerContainer.style.display = 'none';
+  
+  const aceContainer = document.getElementById('ace-options-container');
+  if (!aceContainer) return;
+  aceContainer.innerHTML = '';
+  aceContainer.style.display = 'block';
+  
+  
+  
+  const optionsGrid = document.createElement('div');
+  optionsGrid.classList.add('channels-grid');
+  
+  let imgUrl = detallesOrdenados[0].f21_imagen_Idiom;
+  if (imgUrl) imgUrl = limpiarUrlImagen(imgUrl);
+  
+  detallesOrdenados.forEach((detalle) => {
+    const card = document.createElement('div');
+    card.classList.add('channel-card');
+    if (imgUrl) {
+      const img = document.createElement('img');
+      img.src = proxyImageUrl(imgUrl);
+      img.alt = nombreCanal;
+      img.classList.add('channel-logo');
+      card.appendChild(img);
+    }
+    const url = detalle.f24_url_Final;
+    const codigo = url.slice(-5);
+    const codeSpan = document.createElement('div');
+    codeSpan.textContent = codigo;
+    codeSpan.classList.add('channel-name');
+    card.appendChild(codeSpan);
+    card.addEventListener('click', () => {
+      window.open(url, '_blank');
+      // document.getElementById('sportsdb-modal').style.display = 'none';
+    });
+    optionsGrid.appendChild(card);
+  });
+  
+  aceContainer.appendChild(optionsGrid);
+}
+
+function mostrarReproductorConOpciones(nombreCanal, detallesOrdenados, gridContainer, playerContainer, iframeElement, optionsContainer) {
+  gridContainer.style.display = 'none';
+  playerContainer.style.display = 'block';
+
+  // Añadir clase player-active al modal-content (esto se encarga de todo)
+  const modalContent = document.querySelector('.modal-content');
+  if (modalContent) modalContent.classList.add('player-active');
+
+  // Limpiar opciones y cargar primera URL
+  optionsContainer.innerHTML = '';
+  const primeraUrl = detallesOrdenados[0].f24_url_Final;
+  if (primeraUrl) cargarStreamEnIframe(primeraUrl, iframeElement);
+  
+  detallesOrdenados.forEach((detalle, idx) => {
+    const btn = document.createElement('button');
+    btn.textContent = `Op. ${idx+1}`;
+    btn.classList.add('option-btn');
+    btn.addEventListener('click', () => cargarStreamEnIframe(detalle.f24_url_Final, iframeElement));
+    optionsContainer.appendChild(btn);
+  });
+}
+
+function cargarStreamEnIframe(url, iframeElement) {
+  if (!url) return;
+  // Aquí aplicamos la misma lógica que en crearBotonDesdeDetalle para tipos especiales
+  if (url.includes("acestream")) {
+    // Para acestream, abrir en nueva ventana (o usar el protocolo)
+    window.open(url, '_blank');
+    return;
+  }
+  if (url.includes("youtube.com")) {
+    const videoId = extraerVideoIdDeYouTube(url);
+    if (videoId) {
+      iframeElement.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+    } else {
+      iframeElement.src = url;
+    }
+    return;
+  }
+  if (url.includes('mono.css') || url.includes('/proxy/')) {
+    // Usar video.js? Por simplicidad, cargar en iframe (pero puede no funcionar)
+    // Podrías llamar a mostrarReproductorVideoJs, pero eso es para overlay.
+    // Para el modal, podemos abrir el reproductor video.js aparte.
+    // Por ahora, cargamos en iframe.
+    iframeElement.src = url;
+    return;
+  }
+  // Normal
+  iframeElement.src = url;
+}
 
 
 const fetchData = async (timezone = userTimezone) => {
@@ -760,16 +1027,49 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Cerrar modal al hacer clic en la X o fuera del contenido
-  // Configurar modal de sportsdb
+  // Configurar modal de sportsdb con comportamiento inteligente
   const modal = document.getElementById('sportsdb-modal');
   const closeSpan = document.querySelector('.modal-close');
+  const gridContainerModal = document.getElementById('modal-grid-container');
+  const playerContainerModal = document.getElementById('modal-player-container');
+  const modalIframe = document.getElementById('modal-iframe');
+
+  function handleCloseOrBack() {
+    const modalContent = document.querySelector('.modal-content');
+    const gridContainer = document.getElementById('modal-grid-container');
+    const playerContainer = document.getElementById('modal-player-container');
+    const aceContainer = document.getElementById('ace-options-container');
+    const iframe = document.getElementById('modal-iframe');
+
+    // Si el contenedor de opciones de Acestream está visible
+    if (aceContainer && aceContainer.style.display === 'block') {
+      aceContainer.style.display = 'none';
+      gridContainer.style.display = 'grid';
+      // Si estaba en modo reproductor, quitar la clase (por si acaso)
+      if (modalContent) modalContent.classList.remove('player-active');
+      return;
+    }
+
+    // Si el reproductor web está visible
+    if (playerContainer && playerContainer.style.display === 'block') {
+      gridContainer.style.display = 'grid';
+      playerContainer.style.display = 'none';
+      if (iframe) iframe.src = '';
+      if (modalContent) modalContent.classList.remove('player-active');
+      return;
+    }
+
+    // En cualquier otro caso (grid principal visible), cerrar el modal
+    document.getElementById('sportsdb-modal').style.display = 'none';
+  }
+
   if (modal && closeSpan) {
-    closeSpan.onclick = () => modal.style.display = 'none';
+    closeSpan.onclick = handleCloseOrBack;
     window.onclick = (event) => {
-      if (event.target == modal) modal.style.display = 'none';
+      if (event.target == modal) handleCloseOrBack();
     };
     document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && modal.style.display === 'block') modal.style.display = 'none';
+      if (event.key === 'Escape' && modal.style.display === 'block') handleCloseOrBack();
     });
   }
 

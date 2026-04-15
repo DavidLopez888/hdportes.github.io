@@ -1,3 +1,4 @@
+
 body {
   margin: 0;
   padding: 0;
@@ -603,27 +604,118 @@ body.light-mode {
   background-color: rgba(0,0,0,0.8);
   overflow: auto;
 }
+
 .modal-content {
   background-color: #1e1e2f;
-  margin: 5% auto;
+  margin: 2% auto;
   padding: 20px;
   border-radius: 16px;
-  width: 80%;
-  max-width: 800px;
+  width: 90%;
+  max-width: 1200px;
   color: #f0f0f0;
   font-family: "Proxima Nova", system-ui, sans-serif;
   box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  /* No usar flex aquí para no romper el grid */
 }
+
+/* El botón de cerrar en modo reproductor: flotante absoluto arriba a la derecha */
+.modal-content.player-active .modal-close {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  z-index: 10;
+  font-size: 28px;
+  color: white;
+  background: rgba(0,0,0,0.5);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  text-align: center;
+  line-height: 36px;
+  cursor: pointer;
+  float: none;           /* Anula el float */
+}
+
+.modal-content.player-active .modal-close:hover {
+  /* background: rgba(255,0,0,0.7); */
+  color: white;
+}
+
+.modal-content.player-active {
+  padding: 0;
+  background-color: #000000;
+  display: flex;
+  flex-direction: column;
+  width: auto;
+  max-width: none;
+  height: 96vh;          /* Altura fija del modal */
+  margin: 2vh auto;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;    /* Para posicionar la X absoluta */
+}
+
+.modal-content.player-active .modal-dynamic-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  width: 100%;
+}
+
+.modal-content.player-active #modal-player-container {
+  flex: 1;                /* Esto hace que ocupe todo el espacio disponible */
+  display: flex;
+  flex-direction: column;
+  min-height: 0;          /* Necesario para que flex funcione */
+  background-color: rgb(0, 0, 0); /* Tu color de prueba */
+  /* Elimina justify-content: space-between */
+}
+
+
+/* El wrapper del iframe también ocupa todo */
+.modal-content.player-active #player-iframe-wrapper {
+  flex: 1;
+  min-height: 0;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.modal-content.player-active #player-iframe-wrapper iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+/* Las opciones quedan abajo, sin margen extra */
+.modal-content.player-active .player-options {
+  flex-shrink: 0;
+  margin: 0;
+  margin-top: auto;       /* Esto empuja los botones al fondo */
+  padding: 0 10px;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  background-color: rgb(0, 0, 0);
+}
+
+
 .modal-close {
   color: #aaa;
   float: right;
   font-size: 28px;
   font-weight: bold;
   cursor: pointer;
+  position: relative;
+  top: -20px;   
+  z-index: 100;
 }
+
 .modal-close:hover {
   color: #fff;
 }
+
 #modal-details-container .detalle-evento {
   list-style: none;
   padding: 0;
@@ -635,4 +727,144 @@ body.light-mode {
   padding: 6px 18px;
   font-size: 16px;
   margin-left: 8px;
+}
+
+/* Grid de canales dentro del modal */
+.channels-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 24px;   /* antes era 16px, ahora más separación */
+  margin-top: 20px;
+}
+
+/* Ajuste responsivo: menos columnas en pantallas más pequeñas */
+@media (max-width: 1200px) {
+  .channels-grid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+}
+@media (max-width: 900px) {
+  .channels-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  .channels-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Card de canal */
+.channel-card {
+  width: 100%;               /* En lugar de 160px fijo */
+  height: auto;              /* Alto automático, pero puedes mantener 90px si quieres */
+  min-height: 90px;          /* Altura mínima */
+  background-color: #2a2a3a;
+  border: 1px solid #2c2d2f;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+  text-align: center;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+
+.channel-card:hover {
+  background-color: #3a6ea5;        /* Cambia al color de fondo de los botones al pasar el ratón */
+  border-color: #8ab3d0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.channel-logo {
+  width: 100%;
+  height: auto;
+  max-height: 80px;      /* Ajusta según prefieras */
+  object-fit: contain;
+  margin-bottom: 8px;
+}
+
+.channel-name {
+  font-size: 14px;
+  font-weight: bold;
+  color: #f0f0f0;
+  margin: 0;
+  text-align: center;       /* Centrado horizontal adicional */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;              /* Para que el texto truncado ocupe todo el ancho */
+}
+
+#modal-player-container {
+  display: flex;
+  flex-direction: column;
+  width: auto;
+  background-color: black;
+  overflow: hidden;
+  /* No uses flex:1 aquí */
+}
+
+/* Reproductor y opciones */
+.player-options {
+  flex-shrink: 0;
+  margin: 12px 0 0 0;
+  display: flex;   /* si quieres mantenerlas */
+  justify-content: center;
+  gap: 12px;
+}
+
+.option-btn {
+  background: #3a6ea5;
+  border: none;
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 14px;
+  color: white;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.option-btn:hover {
+  background: #2c5282;
+  transform: scale(1.02);
+}
+
+/* .back-button {
+  background: #555;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 20px;
+  font-size: 14px;
+  color: white;
+  cursor: pointer;
+  display: block;
+  margin: 10px auto 0;
+}
+
+.back-button:hover {
+  background: #777;
+} */
+
+#player-iframe-wrapper {
+  flex: 1;
+  min-height: 0;
+  background-color: rgb(0, 0, 0);
+  height: 96%;
+  width: 100%;
+}
+
+#player-iframe-wrapper iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.channels-section {
+  margin-bottom: 20px;
 }

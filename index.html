@@ -93,7 +93,17 @@
     <div id="sportsdb-modal" class="modal">
     <div class="modal-content">
         <span class="modal-close">&times;</span>
-        <div id="modal-details-container"></div>
+        <!-- Nuevo wrapper para el contenido dinámico -->
+        <div class="modal-dynamic-content">
+        <div id="modal-grid-container"></div>
+        <div id="modal-player-container" style="display: none;">
+            <div id="player-iframe-wrapper">
+            <iframe id="modal-iframe" allowfullscreen></iframe>
+            </div>
+            <div id="player-options" class="player-options"></div>
+        </div>
+        <div id="ace-options-container" style="display: none;"></div>
+        </div>
     </div>
     </div>
 
