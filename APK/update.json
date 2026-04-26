@@ -1,0 +1,7 @@
+{
+  "version": "1.0.0",
+  "versionCode": 3,
+  "apkUrl": "https://hdport.es/APK/HDportes.apk",
+  "forceUpdate": false,
+  "message": "Nuevas funcionalidades y mejoras en el reproductor."
+}
