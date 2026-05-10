@@ -129,7 +129,13 @@ function crearBotonDesdeDetalle(detalle, textoPersonalizado = null) {
   const url = detalle.f24_url_Final;
   if (!url) return boton;
 
-  if (url.includes("atptour")) {
+  // --- Nueva condición para .m3u8 ---
+  if (url.includes('.m3u8')) {
+    boton.addEventListener('click', (e) => {
+      e.preventDefault();
+      mostrarReproductorVideoJs(url, detalle.f22_opcion_Watch);
+    });
+  } else if (url.includes("atptour")) {
     boton.textContent = "ATP Tour";
     boton.addEventListener('click', () => window.open(url, '_blank'));
   } else if (url.includes("acestream")) {
@@ -149,22 +155,20 @@ function crearBotonDesdeDetalle(detalle, textoPersonalizado = null) {
     } else {
       console.error('No se pudo extraer ID de YouTube:', url);
     }
-  // Dentro de la función crearBotonDesdeDetalle
   } else if (url.includes('mono.css') || url.includes('/proxy/')) {
-      // Botón que usa video.js con proxy CORS
-      boton.addEventListener('click', (e) => {
-          e.preventDefault();
-          mostrarReproductorVideoJs(url, detalle.f22_opcion_Watch);
-      });
+    boton.addEventListener('click', (e) => {
+      e.preventDefault();
+      mostrarReproductorVideoJs(url, detalle.f22_opcion_Watch);
+    });
+  } else {
+    boton.addEventListener('click', (e) => {
+      e.preventDefault();
+      mostrarIframe(url);
+    });
   }
-  else {
-  boton.addEventListener('click', (e) => {
-    e.preventDefault();
-    mostrarIframe(url);
-  });
-}
   return boton;
 }
+
 
 // Función para limpiar el nombre del canal (eliminar calidades, números, asteriscos)
 function limpiarNombreCanal(nombreCompleto) {
@@ -816,9 +820,19 @@ function mostrarReproductorConOpciones(nombreCanal, detallesOrdenados, gridConta
 
 function cargarStreamEnIframe(url, iframeElement) {
   if (!url) return;
-  // Aquí aplicamos la misma lógica que en crearBotonDesdeDetalle para tipos especiales
+
+  // Si es .m3u8, usar video.js en lugar de iframe
+  if (url.includes('.m3u8')) {
+    // Cerrar modal si está abierto (opcional)
+    const modal = document.getElementById('sportsdb-modal');
+    if (modal && modal.style.display === 'block') {
+      modal.style.display = 'none';
+    }
+    mostrarReproductorVideoJs(url, 'Stream');
+    return;
+  }
+
   if (url.includes("acestream")) {
-    // Para acestream, abrir en nueva ventana (o usar el protocolo)
     window.open(url, '_blank');
     return;
   }
@@ -832,10 +846,7 @@ function cargarStreamEnIframe(url, iframeElement) {
     return;
   }
   if (url.includes('mono.css') || url.includes('/proxy/')) {
-    // Usar video.js? Por simplicidad, cargar en iframe (pero puede no funcionar)
-    // Podrías llamar a mostrarReproductorVideoJs, pero eso es para overlay.
-    // Para el modal, podemos abrir el reproductor video.js aparte.
-    // Por ahora, cargamos en iframe.
+    // Para estos casos también podrías usar video.js, pero lo dejamos igual
     iframeElement.src = url;
     return;
   }
@@ -846,26 +857,37 @@ function cargarStreamEnIframe(url, iframeElement) {
 
 const fetchData = async (timezone = userTimezone) => {
   try {
-      // Consulta sin filtro de hora (trae todos los eventos con detalles)
-      const params = {
-        TableName: 'eventos',
-        FilterExpression: 'attribute_exists(f20_Detalles_Evento)'
-      };
+      let allItems = [];
+      let lastKey = undefined;
+      let hasMore = true;
 
-      const result = await dynamodb.scan(params).promise();
+      while (hasMore) {
+        const params = {
+          TableName: 'eventos',
+          FilterExpression: 'attribute_exists(f20_Detalles_Evento)',
+          ExclusiveStartKey: lastKey
+        };
+        const result = await dynamodb.scan(params).promise();
+        if (result.Items && result.Items.length) {
+          allItems = allItems.concat(result.Items);
+        }
+        lastKey = result.LastEvaluatedKey;
+        hasMore = !!lastKey;
+      }
 
-      // Limpiar contenedores
+      // Ahora allItems contiene TODOS los eventos con detalles
       const eventosContainer = document.getElementById('eventos-container');
       const eventosContainerTOP = document.getElementById('eventos-container-top');
       eventosContainer.innerHTML = '';
       eventosContainerTOP.innerHTML = '';
 
       // Ordenar todos los eventos por fecha (más reciente primero)
-      const eventosOrdenados = result.Items?.filter(item =>
+      const eventosOrdenados = allItems.filter(item =>
         typeof item.f03_dia_event === 'string'
       ).sort((a, b) =>
         new Date(b.f03_dia_event) - new Date(a.f03_dia_event)
       ) || [];
+
 
       // Calcular rango de hora actual (para filtrar eventos normales)
       const { horamenos, horamas } = getTimeRange();
@@ -910,68 +932,95 @@ const fetchData = async (timezone = userTimezone) => {
 
 
 // Función para mostrar el reproductor video.js con un stream HLS
+// ========== 1. Modificar mostrarReproductorVideoJs ==========
 function mostrarReproductorVideoJs(streamUrl, titulo) {
-    const container = document.getElementById('videojs-container');
-    const videoElement = document.getElementById('my-video');
-    const closeBtn = document.getElementById('close-videojs');
-    
-    // Si ya existe un reproductor, lo destruimos
-    if (window.videojsPlayer) {
-        window.videojsPlayer.dispose();
-        window.videojsPlayer = null;
-    }
-    
-    // Limpiar el elemento video (por si acaso)
-    videoElement.innerHTML = '';
-    
-    // Mostrar el contenedor y el overlay (si usas uno)
-    container.style.display = 'block';
-    const overlay = document.getElementById('background-overlay');
-    if (overlay) overlay.style.display = 'block';
-    
-    // Configurar el botón de cierre
-    closeBtn.onclick = () => {
-        if (window.videojsPlayer) {
-            window.videojsPlayer.dispose();
-            window.videojsPlayer = null;
+  const container = document.getElementById('videojs-container');
+  const videoElement = document.getElementById('my-video');
+  const closeBtn = document.getElementById('close-videojs');
+
+  if (!container || !videoElement) return;
+
+  // Destruir reproductor anterior
+  if (window.hls) {
+    window.hls.destroy();
+    window.hls = null;
+  }
+  if (window.videojsPlayer) {
+    window.videojsPlayer.dispose();
+    window.videojsPlayer = null;
+  }
+
+  // Limpiar el video
+  videoElement.innerHTML = '';
+  videoElement.removeAttribute('src');
+  videoElement.load();
+
+  // Mostrar overlay y contenedor
+  container.style.display = 'block';
+  const overlay = document.getElementById('background-overlay');
+  if (overlay) overlay.style.display = 'block';
+
+  closeBtn.onclick = () => {
+    if (window.hls) window.hls.destroy();
+    if (window.videojsPlayer) window.videojsPlayer.dispose();
+    container.style.display = 'none';
+    if (overlay) overlay.style.display = 'none';
+    window.hls = null;
+    window.videojsPlayer = null;
+  };
+
+  // Usar hls.js
+  if (Hls.isSupported()) {
+    window.hls = new Hls({
+      enableWorker: true,
+      debug: false,               // Cambia a true para logs detallados
+      xhrSetup: function(xhr, url) {
+        // Enviar la misma cabecera Referer que la página actual
+        xhr.setRequestHeader('Referer', window.location.href);
+        // Si el servidor requiere un Origin específico, puedes forzarlo
+        // xhr.setRequestHeader('Origin', window.location.origin);
+        xhr.withCredentials = false; // Evita enviar cookies si no es necesario
+      }
+    });
+
+    window.hls.loadSource(streamUrl);
+    window.hls.attachMedia(videoElement);
+
+    window.hls.on(Hls.Events.MANIFEST_PARSED, function() {
+      videoElement.play().catch(e => console.warn('Autoplay bloqueado:', e));
+    });
+
+    window.hls.on(Hls.Events.ERROR, function(event, data) {
+      console.error('Error en hls.js:', data);
+      if (data.fatal) {
+        switch (data.type) {
+          case Hls.ErrorTypes.NETWORK_ERROR:
+            console.log('Error de red, reintentando...');
+            window.hls.startLoad();
+            break;
+          case Hls.ErrorTypes.MEDIA_ERROR:
+            console.log('Error de medios, recuperando...');
+            window.hls.recoverMediaError();
+            break;
+          default:
+            window.hls.destroy();
+            window.hls = null;
+            break;
         }
-        container.style.display = 'none';
-        if (overlay) overlay.style.display = 'none';
-    };
-    
-    // Inicializar video.js
-    window.videojsPlayer = videojs(videoElement, {
-        controls: true,
-        autoplay: true,
-        preload: 'auto',
-        html5: {
-            hls: {
-                overrideNative: true,
-                debug: false
-            }
-        }
+      }
     });
-    
-    // Usar un proxy CORS (por ejemplo corsfix) para evitar problemas de CORS
-    // Si ya tienes la URL con el proxy, la usas directamente; si no, lo añades.
-    let proxyUrl = streamUrl;
-    if (!streamUrl.includes('corsfix.com') && !streamUrl.includes('cors-anywhere')) {
-        proxyUrl = 'https://corsfix.com/' + streamUrl;
-    }
-    
-    // Cargar el stream (tipo HLS)
-    window.videojsPlayer.src({ src: proxyUrl, type: 'application/vnd.apple.mpegurl' });
-    
-    window.videojsPlayer.ready(() => {
-        console.log('Reproductor video.js listo para:', titulo);
+  } 
+  // Fallback a reproducción nativa (Safari, Edge)
+  else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+    videoElement.src = streamUrl;
+    videoElement.addEventListener('loadedmetadata', () => {
+      videoElement.play().catch(e => console.warn('Autoplay falló:', e));
     });
-    
-    window.videojsPlayer.on('error', () => {
-        const error = window.videojsPlayer.error();
-        console.error('Error en video.js:', error);
-        // Opcional: mostrar mensaje al usuario
-    });
+  } else {
+    console.error('HLS no soportado en este navegador');
+  }
 }
+
 
 
 // Inicialización
