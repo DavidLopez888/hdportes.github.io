@@ -20,13 +20,17 @@ const WORKER_URL = 'https://shrill-unit-d8c2.naitsirczepol.workers.dev';
 function proxyImageUrl(originalUrl) {
   if (!originalUrl) return null;
   
+  // Si la URL es de thesportsdb o api.ppv.to, no aplicar proxy
+  if (originalUrl.includes('thesportsdb') || originalUrl.includes('api.ppv.to') || originalUrl.includes('postimg')) {
+    return originalUrl;
+  }
+  
   // Si ya es una URL de nuestro propio dominio o del Worker, no la procesamos
   if (originalUrl.includes(WORKER_URL) || originalUrl.includes('hdport.es')) {
     return originalUrl;
   }
   
   // Aplicar proxy a TODAS las URLs externas (no solo livetv)
-  // Esto asegura que cualquier imagen bloqueada por geolocalización se solucione
   const proxied = `${WORKER_URL}/proxy/${encodeURIComponent(originalUrl)}`;
   return proxied;
 }
@@ -896,7 +900,9 @@ const fetchData = async (timezone = userTimezone) => {
       const otherEvents = [];
 
       eventosOrdenados.forEach(item => {
-        const isSportsdb = item.f07_URL_Flag && item.f07_URL_Flag.includes('thesportsdb.com');
+        const isSportsdb = item.f07_URL_Flag && 
+          (item.f07_URL_Flag.includes('thesportsdb.com') || 
+          item.f07_URL_Flag.includes('ppv.to'));
         
         if (isSportsdb) {
           // Excluir solo si el proveedor es exactamente "Bases"
