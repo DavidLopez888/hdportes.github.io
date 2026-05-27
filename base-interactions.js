@@ -503,7 +503,7 @@ function renderOtherEvents(eventos, timezone) {
       detalleEventoContainer.classList.add('detalle-evento-container');
       detalleEventoContainer.style.display = 'none';
 
-      const webDetails = detallesOrdenados.filter(d => [1,3,4,5].includes(d._orden_proveedor));
+      const webDetails = detallesOrdenados.filter(d => [1,3,4,5,18].includes(d._orden_proveedor));
       const aceDetails = detallesOrdenados.filter(d => [6,7,8,9].includes(d._orden_proveedor));
 
       const eventoDetalle = document.createElement('ul');
