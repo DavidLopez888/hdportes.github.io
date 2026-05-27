@@ -595,7 +595,7 @@ function generarGridCanales(eventData, modalGridContainer, modalPlayerContainer,
 
   // Separar Acestream (orden 6,7,8,9) y Web (1,3,4,5)
   const aceDetails = detalles.filter(d => [6,7,8,9].includes(d._orden_proveedor));
-  const webDetails = detalles.filter(d => [1,3,4,5].includes(d._orden_proveedor));
+  const webDetails = detalles.filter(d => [1,3,4,5,18].includes(d._orden_proveedor));
 
   // Limpiar contenedor principal
   modalGridContainer.innerHTML = '';
